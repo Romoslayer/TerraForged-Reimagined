@@ -27,15 +27,17 @@ package com.terraforged.mod.worldgen.cave;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.levelgen.DensityFunction;
-import net.minecraft.world.level.levelgen.DensityFunctions;
+import net.minecraft.world.level.levelgen.densityfunction.DensityFunction;
+import net.minecraft.world.level.levelgen.densityfunction.DensityFunctions;
+import net.minecraft.world.level.levelgen.densityfunction.DensitySampler;
+import net.minecraft.world.level.levelgen.densityfunction.SamplerContext;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.levelgen.NoiseGeneratorSettings;
-import net.minecraft.world.level.levelgen.NoiseRouter;
-import net.minecraft.world.level.levelgen.NoiseRouterData;
 import net.minecraft.world.level.levelgen.Noises;
 import net.minecraft.world.level.levelgen.RandomState;
 
@@ -122,12 +124,18 @@ public final class DeepCaves {
 
     private static final int CHEESE = 0, ENTRANCES = 1, NOODLE = 2, PARTS = 3;
 
+    // Vanilla's cave terms, by id: NoiseRouterData's keys for them are private.
+    private static final ResourceKey<DensityFunction> ENTRANCES_KEY = ResourceKey.create(Registries.DENSITY_FUNCTION,
+            Identifier.withDefaultNamespace("overworld/caves/entrances"));
+    private static final ResourceKey<DensityFunction> NOODLE_KEY = ResourceKey.create(Registries.DENSITY_FUNCTION,
+            Identifier.withDefaultNamespace("overworld/caves/noodle"));
+
     private final long seed;
     private final int seaLevel;
-    private final DensityFunction[] parts;
+    private final DensitySampler[] parts;
     private final net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> deepDark;
 
-    private DeepCaves(long seed, int seaLevel, DensityFunction[] parts, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> deepDark) {
+    private DeepCaves(long seed, int seaLevel, DensitySampler[] parts, net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> deepDark) {
         this.seed = seed;
         this.seaLevel = seaLevel;
         this.parts = parts;
@@ -146,9 +154,9 @@ public final class DeepCaves {
     }
 
     /**
-     * Wires the density functions to the level seed. {@code RandomState} is the only public route to that
-     * wiring, and it only wires a {@code NoiseRouter}, so the parts travel in router slots; the rest of the
-     * router is unused.
+     * Wires the density functions to the level seed. Up to 26.2 the only public route to that wiring was
+     * {@code RandomState}'s noise router, so the parts had to travel in router slots. 26.3's {@code RandomState}
+     * compiles any density function against the seed directly, with each noise still seeded from its own key.
      */
     public static DeepCaves create(HolderLookup.Provider registries, NoiseGeneratorSettings overworld, long seed) {
         var functions = registries.lookupOrThrow(Registries.DENSITY_FUNCTION);
@@ -156,33 +164,24 @@ public final class DeepCaves {
 
         // Vanilla's cheese term, verbatim except for CAVE_LAYER's vertical scale -- see CHEESE_LAYER_Y.
         // noise(h, d) is noise(h, 1.0, d), so only the y scale differs from NoiseRouterData.
-        var layers = DensityFunctions.mul(DensityFunctions.constant(4.0),
+        var layers = DensityFunctions.mul(DensityFunctions.constant(4.0F),
                 DensityFunctions.noise(noises.getOrThrow(Noises.CAVE_LAYER), 1.0, CHEESE_LAYER_Y).square());
-        var cheese = DensityFunctions.add(layers, DensityFunctions.add(DensityFunctions.constant(0.27),
-                DensityFunctions.noise(noises.getOrThrow(Noises.CAVE_CHEESE), 0.6666666666666666)).clamp(-1.0, 1.0));
-        var entrances = get(functions, NoiseRouterData.ENTRANCES);
-        var noodle = get(functions, NoiseRouterData.NOODLE);
+        var cheese = DensityFunctions.add(layers, DensityFunctions.add(DensityFunctions.constant(0.27F),
+                DensityFunctions.noise(noises.getOrThrow(Noises.CAVE_CHEESE), 0.6666666666666666)).clamp(-1.0F, 1.0F));
+        var entrances = get(functions, ENTRANCES_KEY);
+        var noodle = get(functions, NOODLE_KEY);
         // No spaghetti_2d term: see density(). Every noise is seeded from its own key, so leaving one out
-        // of the router does not shift any other.
+        // does not shift any other.
 
-        var zero = DensityFunctions.zero();
-        var router = new NoiseRouter(cheese, entrances, zero, zero,
-                zero, zero, zero, zero, zero, zero, zero, noodle, zero, zero, zero);
-
-        var settings = new NoiseGeneratorSettings(overworld.noiseSettings(), overworld.defaultBlock(),
-                overworld.defaultFluid(), router, overworld.surfaceRule(), overworld.spawnTarget(),
-                overworld.seaLevel(), overworld.disableMobGeneration(), overworld.aquifersEnabled(),
-                overworld.oreVeinsEnabled(), overworld.useLegacyRandomSource());
-
-        var wired = RandomState.create(settings, noises, seed).router();
+        var state = RandomState.create(noises, seed, overworld);
         // Order must match CHEESE, ENTRANCES, NOODLE.
-        return new DeepCaves(seed, overworld.seaLevel(), new DensityFunction[]{
-                wired.barrierNoise(), wired.fluidLevelFloodednessNoise(), wired.finalDensity()},
+        return new DeepCaves(seed, overworld.seaLevel(), new DensitySampler[]{
+                state.getSampler(cheese), state.getSampler(entrances), state.getSampler(noodle)},
                 registries.lookupOrThrow(Registries.BIOME).getOrThrow(net.minecraft.world.level.biome.Biomes.DEEP_DARK));
     }
 
     private static DensityFunction get(HolderLookup.RegistryLookup<DensityFunction> functions,
-                                       net.minecraft.resources.ResourceKey<DensityFunction> key) {
+                                       ResourceKey<DensityFunction> key) {
         return new DensityFunctions.HolderHolder(functions.getOrThrow(key));
     }
 
@@ -277,9 +276,8 @@ public final class DeepCaves {
 
                 for (int cy = 0; cy <= cellsY; cy++) {
                     int y = minY + cy * CELL_HEIGHT;
-                    var context = new DensityFunction.SinglePointContext(x, y, z);
                     for (int p = 0; p < PARTS; p++) {
-                        values[p] = parts[p].compute(context);
+                        values[p] = parts[p].sampleValue(SamplerContext.EMPTY_UNCACHED, x, y, z);
                     }
 
                     double slide = Math.min(1.0, (y - minY) / (double) BOTTOM_SLIDE);
@@ -334,7 +332,7 @@ public final class DeepCaves {
 
                     pos.set(dx, y, dz);
                     var state = chunk.getBlockState(pos);
-                    if (!state.is(BlockTags.OVERWORLD_CARVER_REPLACEABLES) || !state.getFluidState().isEmpty()) {
+                    if (!state.is(com.terraforged.mod.data.ModTags.CARVER_REPLACEABLES) || !state.getFluidState().isEmpty()) {
                         carvedAbove = false;
                         continue;
                     }
@@ -377,7 +375,7 @@ public final class DeepCaves {
                         boolean removable = true;
                         for (int c = 0; c < cap && removable; c++) {
                             var state = chunk.getBlockState(pos.set(dx, surface - c, dz));
-                            removable = state.is(BlockTags.OVERWORLD_CARVER_REPLACEABLES) && state.getFluidState().isEmpty()
+                            removable = state.is(com.terraforged.mod.data.ModTags.CARVER_REPLACEABLES) && state.getFluidState().isEmpty()
                                     && !space.isProtected(i, x, surface - c, z);
                         }
                         if (removable) {
@@ -396,7 +394,7 @@ public final class DeepCaves {
                         boolean removable = true;
                         for (int y = surface; y > topCarved && removable; y--) {
                             var state = chunk.getBlockState(pos.set(dx, y, dz));
-                            removable = state.is(BlockTags.OVERWORLD_CARVER_REPLACEABLES) && state.getFluidState().isEmpty()
+                            removable = state.is(com.terraforged.mod.data.ModTags.CARVER_REPLACEABLES) && state.getFluidState().isEmpty()
                                     && !space.isProtected(i, x, y, z);
                         }
                         if (removable) {

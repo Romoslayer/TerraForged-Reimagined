@@ -31,6 +31,7 @@ import com.terraforged.mod.worldgen.biome.vegetation.VegetationFeatures;
 import com.terraforged.mod.worldgen.terrain.TerrainData;
 import com.terraforged.noise.util.NoiseUtil;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.levelgen.placement.FeaturePlacer;
 import net.minecraft.core.Holder;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.WorldGenLevel;
@@ -130,7 +131,7 @@ public class PositionSampler {
 
         for (var other : features) {
             random.setFeatureSeed(seed, offset, VegetationFeatures.STAGE);
-            if (other.placeWithBiomeCheck(level, generator, random, origin)) {
+            if (new FeaturePlacer(level, generator).placeWithBiomeCheck(other, random, origin)) {
                 offset++;
             }
         }
@@ -221,7 +222,7 @@ public class PositionSampler {
         for (var feature : context.features.trees()) {
             context.random.setFeatureSeed(seed, offset, VegetationFeatures.STAGE);
 
-            if (feature.placeWithBiomeCheck(context.region, context.generator, context.random, context.pos)) {
+            if (new FeaturePlacer(context.region, context.generator).placeWithBiomeCheck(feature, context.random, context.pos)) {
                 offset++;
             }
         }
@@ -229,7 +230,7 @@ public class PositionSampler {
         for (var feature : context.features.grass()) {
             context.random.setFeatureSeed(seed, offset, VegetationFeatures.STAGE);
 
-            if (feature.placeWithBiomeCheck(context.region, context.generator, context.random, context.pos)) {
+            if (new FeaturePlacer(context.region, context.generator).placeWithBiomeCheck(feature, context.random, context.pos)) {
                 offset++;
             }
         }
@@ -255,7 +256,7 @@ public class PositionSampler {
         for (var feature : context.features.trees()) {
             context.random.setFeatureSeed(seed, offset, VegetationFeatures.STAGE);
 
-            if (feature.placeWithBiomeCheck(context.region, context.generator, context.random, context.pos)) {
+            if (new FeaturePlacer(context.region, context.generator).placeWithBiomeCheck(feature, context.random, context.pos)) {
                 offset++;
             }
         }
@@ -279,7 +280,7 @@ public class PositionSampler {
         for (int i = 0; i < passes; i++) {
             for (var feature : context.features.grass()) {
                 random.setFeatureSeed(seed, offset + i, VegetationFeatures.STAGE);
-                if (feature.placeWithBiomeCheck(region, generator, random, pos)) {
+                if (new FeaturePlacer(region, generator).placeWithBiomeCheck(feature, random, pos)) {
                     offset++;
                 }
             }

@@ -25,6 +25,7 @@
 package com.terraforged.mod.worldgen.biome.decorator;
 
 import net.minecraft.core.HolderLookup;
+import net.minecraft.world.level.levelgen.placement.FeaturePlacer;
 import net.minecraft.core.registries.Registries;
 import com.terraforged.mod.worldgen.Generator;
 import com.terraforged.mod.worldgen.settings.TerraSettings;
@@ -140,7 +141,7 @@ public class VanillaDecorator {
 
                 if (isDisabled(holder, misc)) continue;
 
-                holder.value().placeWithBiomeCheck(level, generator, random, origin);
+                new FeaturePlacer(level, generator).placeWithBiomeCheck(holder.value(), random, origin);
             }
         }
     }
@@ -161,7 +162,7 @@ public class VanillaDecorator {
             random.setFeatureSeed(seed, structureIndex, stage);
 
             var structure = structures.get(structureIndex);
-            var starts = structureManager.startsForStructure(sectionPos, structure.value());
+            var starts = structureManager.startsForStructure(sectionPos.x(), sectionPos.z(), structure.value());
             for (int startIndex = 0; startIndex < starts.size(); startIndex++) {
                 var start = starts.get(startIndex);
                 start.placeInChunk(level, structureManager, generator, random, getWritableArea(chunk), chunkPos);
@@ -188,7 +189,7 @@ public class VanillaDecorator {
             var holder = features.get(i);
             if (isDisabled(holder, misc)) continue;
 
-            holder.value().placeWithBiomeCheck(level, generator, random, origin);
+            new FeaturePlacer(level, generator).placeWithBiomeCheck(holder.value(), random, origin);
         }
     }
 

@@ -28,6 +28,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeManager;
+import net.minecraft.world.level.biome.BiomeResolver;
 
 public class DelegateBiomeManager extends BiomeManager {
     protected BiomeManager delegate;
@@ -40,7 +41,7 @@ public class DelegateBiomeManager extends BiomeManager {
         this.delegate = delegate;
     }
 
-    public BiomeManager withDifferentSource(BiomeManager.NoiseBiomeSource source) {
+    public BiomeManager withDifferentSource(BiomeResolver source) {
         return delegate.withDifferentSource(source);
     }
 

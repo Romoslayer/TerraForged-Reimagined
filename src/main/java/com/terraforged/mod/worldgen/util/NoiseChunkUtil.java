@@ -24,92 +24,31 @@
 
 package com.terraforged.mod.worldgen.util;
 
-import com.terraforged.mod.util.ReflectionUtil;
 import com.terraforged.mod.worldgen.Generator;
-import com.terraforged.mod.worldgen.Seeds;
-import com.terraforged.mod.worldgen.terrain.TerrainData;
-import it.unimi.dsi.fastutil.longs.Long2IntMap;
-import net.minecraft.core.QuartPos;
-import net.minecraft.server.level.ColumnPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.levelgen.Beardifier;
 import net.minecraft.world.level.levelgen.NoiseChunk;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.blending.Blender;
-
-import java.lang.invoke.MethodHandle;
-import java.util.concurrent.CompletableFuture;
+import net.minecraft.world.level.levelgen.densityfunction.DensityVolume;
 
 public class NoiseChunkUtil {
-    private static final MethodHandle SURFACE_CACHE = ReflectionUtil.field(NoiseChunk.class, Long2IntMap.class);
-
-    public static NoiseChunk getNoiseChunk(ChunkAccess chunk, RandomState state, Generator generator) {
-        var terrainData = generator.getChunkDataAsync(generator.getSeed(), chunk.getPos());
-
-        var noiseChunk = chunk.getOrCreateNoiseChunk(c -> {
-            var vanilla = generator.getVanillaGen();
-            var fluidPicker = vanilla.getGlobalFluidPicker();
-            var settings = vanilla.getSettings().value();
-            return NoiseChunk.forChunk(c, state, NoopNoise.BEARDIFIER, settings, fluidPicker, Blender.empty());
-        });
-
-        initChunk(chunk, noiseChunk, terrainData);
-
-        return noiseChunk;
-    }
-
-    private static void initChunk(ChunkAccess chunk, NoiseChunk noiseChunk, CompletableFuture<TerrainData> terrainData) {
-        var cache = getCache(noiseChunk);
-        if (!cache.isEmpty()) return;
-
-        initSurfaceCache(chunk, cache, terrainData);
-    }
-
-    private static void initSurfaceCache(ChunkAccess chunk, Long2IntMap cache, CompletableFuture<TerrainData> terrainData) {
-        var chunkPos = chunk.getPos();
-        var data = terrainData.join();
-
-        int startX = chunkPos.getMinBlockX();
-        int startZ = chunkPos.getMinBlockZ();
-        int min = Integer.MAX_VALUE;
-        int max = Integer.MIN_VALUE;
-
-        cache.clear();
-
-        for (int dz = 0; dz < 16; dz += 4) {
-            for (int dx = 0; dx < 16; dx += 4) {
-                int height = data.getHeight(dx, dz);
-                int qx = QuartPos.toBlock(QuartPos.fromBlock(startX + dx));
-                int qz = QuartPos.toBlock(QuartPos.fromBlock(startZ + dz));
-                long index = ColumnPos.asLong(qx, qz);
-                cache.put(index, height);
-                min = Math.min(min, height);
-                max = Math.max(max, height);
-            }
-        }
-
-        // Note: I don't understand what area of height values vanilla
-        // chunk gen expects. Fill a 3x3 chunk area because that seems
-        // to fix an issue where some surfaces just get left as stone
-        // for some reason. TODO: Figure out wtf
-
-        for (int dz = -16; dz < 32; dz += 4) {
-            for (int dx = -16; dx < 32; dx += 4) {
-                if ((dx & 15) == dx && (dz & 15) == dz) continue;
-
-                int qx = QuartPos.toBlock(QuartPos.fromBlock(startX + dx));
-                int qz = QuartPos.toBlock(QuartPos.fromBlock(startZ + dz));
-                long index = ColumnPos.asLong(qx, qz);
-
-                cache.put(index, min);
-            }
-        }
-    }
-
-    private static Long2IntMap getCache(NoiseChunk noiseChunk) {
-        try {
-            return (Long2IntMap) SURFACE_CACHE.invokeExact(noiseChunk);
-        } catch (Throwable e) {
-            throw new Error(e);
-        }
+    /**
+     * The {@code NoiseChunk} the surface system reads while dressing a chunk.
+     *
+     * <p>Up to 26.2 this reflected TerraForged's heights into the noise chunk's preliminary-surface cache.
+     * 26.3's noise chunk has no such cache -- it is only a density volume, its samplers and an aquifer --
+     * and the surface system samples the preliminary surface from {@code terrainState}'s router instead,
+     * which carries {@link TerrainSurfaceLevel}. See {@link Generator#terrainState}.
+     *
+     * <p>Close it when done: it borrows a density buffer pool from {@code terrainState}.
+     */
+    public static NoiseChunk createSurfaceNoiseChunk(ChunkAccess chunk, RandomState terrainState, Generator generator) {
+        var vanilla = generator.getVanillaGen();
+        var pos = chunk.getPos();
+        var heights = chunk.getHeightAccessorForGeneration();
+        var volume = new DensityVolume(16, heights.getHeight(), 16, pos.getMinBlockX(), heights.getMinY(), pos.getMinBlockZ());
+        return new NoiseChunk(terrainState, Beardifier.EMPTY, vanilla.getSurfaceSettings(), vanilla.getGlobalFluidPicker(),
+                Blender.empty(), volume);
     }
 }

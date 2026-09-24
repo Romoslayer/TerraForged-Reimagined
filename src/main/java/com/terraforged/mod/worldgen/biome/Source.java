@@ -38,6 +38,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeResolver;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.biome.Climate;
 
@@ -46,9 +47,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
-public class Source extends BiomeSource {
+public class Source extends BiomeSource implements BiomeResolver {
     public static final MapCodec<Source> CODEC = new SourceCodec();
-    public static final Climate.Sampler NOOP_CLIMATE_SAMPLER = Climate.empty();
 
     protected int seed;
     protected final HolderLookup.Provider registries;
@@ -158,8 +158,18 @@ public class Source extends BiomeSource {
      * judged not worth that cost; nothing is known to be broken by the disagreement, because the only
      * vanilla structure gated on a cave biome is the ancient city and the deep band covers it.
      */
+    /**
+     * 26.3 asks a biome source for a resolver rather than a biome. TerraForged places biomes from its own
+     * noise and never reads the climate sampler, so the source is its own resolver, as vanilla's
+     * {@code FixedBiomeSource} is.
+     */
     @Override
-    public Holder<Biome> getNoiseBiome(int x, int y, int z, Climate.Sampler sampler) {
+    public BiomeResolver createResolver(Climate.Sampler sampler) {
+        return this;
+    }
+
+    @Override
+    public Holder<Biome> getNoiseBiome(int x, int y, int z) {
         if (com.terraforged.mod.worldgen.util.ChunkUtil.isCaveBiomeQuart(y)) {
             var cave = getLayerBiome(x, z);
             if (cave != null) return cave;

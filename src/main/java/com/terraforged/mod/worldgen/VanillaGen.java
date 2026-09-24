@@ -25,16 +25,15 @@
 package com.terraforged.mod.worldgen;
 
 import net.minecraft.core.Holder;
-import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.levelgen.*;
-import net.minecraft.world.level.levelgen.carver.CarvingContext;
+
+import java.util.Optional;
 
 /**
  * Wraps a vanilla {@link NoiseBasedChunkGenerator} so TerraForged can borrow parts of vanilla's
- * generation (aquifers, carving context) while driving the terrain itself.
+ * generation (the fluid picker, the overworld's material rules) while driving the terrain itself.
  *
  * <p>The structure-set and noise-parameter registries this used to carry are gone:
  * {@code NoiseBasedChunkGenerator} takes only {@code (BiomeSource, Holder<NoiseGeneratorSettings>)}
@@ -49,6 +48,7 @@ public class VanillaGen {
     protected final Aquifer.FluidStatus fluidStatus1;
     protected final Aquifer.FluidStatus fluidStatus2;
     protected final Aquifer.FluidPicker globalFluidPicker;
+    protected final NoiseGeneratorSettings surfaceSettings;
 
     public VanillaGen(BiomeSource biomeSource, VanillaGen other) {
         this(biomeSource, other.settings, other.fluidStatus2.fluidLevel());
@@ -72,17 +72,25 @@ public class VanillaGen {
         this.fluidStatus2 = new Aquifer.FluidStatus(seaLevel, settings.value().defaultFluid());
         this.globalFluidPicker = (x, y, z) -> y < lavaLevel ? fluidStatus1 : fluidStatus2;
         this.vanillaGenerator = new NoiseBasedChunkGenerator(biomeSource, settings);
+
+        // A NoiseChunk reads its settings only to build an aquifer, which surface building never touches;
+        // without this each chunk's surface pass would construct one for nothing.
+        var s = settings.value();
+        this.surfaceSettings = new NoiseGeneratorSettings(s.noiseSettings(), s.defaultBlock(), s.defaultFluid(),
+                s.noiseRouter(), s.materialRule(), s.spawnTarget(), s.seaLevel(), s.disableMobGeneration(),
+                Optional.empty(), s.useLegacyRandomSource(), s.debugFunctions());
     }
 
     public Holder<NoiseGeneratorSettings> getSettings() {
         return settings;
     }
 
-    public Aquifer.FluidPicker getGlobalFluidPicker() {
-        return globalFluidPicker;
+    /** The overworld settings with aquifers switched off, for the surface pass's noise chunk. */
+    public NoiseGeneratorSettings getSurfaceSettings() {
+        return surfaceSettings;
     }
 
-    public CarvingContext createCarvingContext(WorldGenRegion region, ChunkAccess chunk, NoiseChunk noiseChunk, RandomState state) {
-        return new CarvingContext(vanillaGenerator, region.registryAccess(), chunk.getHeightAccessorForGeneration(), noiseChunk, state, null);
+    public Aquifer.FluidPicker getGlobalFluidPicker() {
+        return globalFluidPicker;
     }
 }

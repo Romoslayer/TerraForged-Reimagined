@@ -23,6 +23,9 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(java_version.toInteger()
 sourceSets.main.java {
     exclude 'com/terraforged/mod/data/gen/**'
     exclude 'com/terraforged/mod/util/TagLoader.java'
+    // Upstream's volcano feature experiment: never registered or referenced, and written against the
+    // Feature<Config> API that 26.3 replaced. Excluded, like the datagen path, rather than deleted.
+    exclude 'com/terraforged/mod/worldgen/test/**'
 }
 
 repositories {

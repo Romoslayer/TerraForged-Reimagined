@@ -58,9 +58,10 @@ public final class StructureOverrides {
     public static ChunkGeneratorStructureState createState(HolderLookup<StructureSet> structureSets,
                                                            RandomState randomState,
                                                            long levelSeed,
+                                                           net.minecraft.world.level.ChunkPos origin,
                                                            BiomeSource biomeSource,
                                                            TerraSettings.Structures config) {
-        var base = ChunkGeneratorStructureState.createForNormal(randomState, levelSeed, biomeSource, structureSets);
+        var base = ChunkGeneratorStructureState.createForNormal(randomState, levelSeed, origin, biomeSource, structureSets);
         if (config.spread.isEmpty() && config.rings.isEmpty()) return base;
 
         var sets = new ArrayList<Holder<StructureSet>>();
@@ -139,6 +140,6 @@ public final class StructureOverrides {
 
         com.terraforged.mod.TerraForged.LOG.info("Structure overrides: {} structure set(s) re-spaced, {} disabled", replaced, disabled);
 
-        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, levelSeed, java.util.List.copyOf(sets));
+        return new ChunkGeneratorStructureState(randomState, biomeSource, levelSeed, origin, levelSeed, java.util.List.copyOf(sets));
     }
 }

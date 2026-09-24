@@ -36,9 +36,9 @@ public class DataGenSetup extends Stage {
         TerraForged.LOG.info("Registering data-gen content");
 
         // Anything that copies or classifies vanilla biomes needs a biome lookup now that
-        // BuiltinRegistries is gone. VanillaRegistries.createLookup() builds vanilla's own worldgen
+        // BuiltinRegistries is gone. VanillaRegistries.createWorldLookup() builds vanilla's own worldgen
         // content, which is what BuiltinRegistries used to hold.
-        var lookup = VanillaRegistries.createLookup();
+        var lookup = VanillaRegistries.createWorldLookup();
 
         ModTerrainTypes.register();
         ModTerrains.register();

@@ -24,11 +24,25 @@
 
 package com.terraforged.mod.data;
 
+import com.terraforged.mod.TerraForged;
 import com.terraforged.mod.registry.lazy.LazyTag;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Block;
 
 public interface ModTags {
     LazyTag<Biome> OVERWORLD = LazyTag.biome("overworld");
+
+    /**
+     * The blocks TerraForged's cave passes may carve away: natural terrain, not anything placed on it.
+     *
+     * <p>Until 26.2 this was vanilla's {@code #minecraft:overworld_carver_replaceables}. 26.3 deleted that
+     * tag and turned vanilla's carvers around to carve everything except {@code #minecraft:uncarvable}
+     * (bedrock alone), which would let the caves cut through ice, powder snow, clay and anything a mod
+     * places. So TerraForged ships the 26.2 list as its own tag, unchanged, to keep its caves as they were.
+     */
+    TagKey<Block> CARVER_REPLACEABLES = TagKey.create(Registries.BLOCK, TerraForged.location("carver_replaceables"));
 
     /**
      * Biomes that belong underground rather than on the surface.

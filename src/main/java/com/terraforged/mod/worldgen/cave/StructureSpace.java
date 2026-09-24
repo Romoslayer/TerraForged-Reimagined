@@ -108,7 +108,7 @@ public final class StructureSpace {
         var chunkPos = chunk.getPos();
         int cavernReach = CAVERN_MARGIN + (int) WALL_VARIANCE + 1;
 
-        structures.startsForStructure(chunkPos, s -> true).forEach(start -> {
+        structures.startsForStructure(chunkPos.x(), chunkPos.z(), s -> true).forEach(start -> {
             var structure = start.getStructure();
             var adaptation = structure.terrainAdaptation();
             boolean buried = StructureTerrain.isBuried(structure);
@@ -251,7 +251,7 @@ public final class StructureSpace {
         var boxes = new ArrayList<BoundingBox>();
         var chunkPos = chunk.getPos();
 
-        structures.startsForStructure(chunkPos, s -> true).forEach(start -> {
+        structures.startsForStructure(chunkPos.x(), chunkPos.z(), s -> true).forEach(start -> {
             boolean shapesTerrain = start.getStructure().terrainAdaptation() != TerrainAdjustment.NONE;
 
             for (var piece : start.getPieces()) {
@@ -408,7 +408,7 @@ public final class StructureSpace {
 
                     var state = chunk.getBlockState(pos.set(dx, y, dz));
                     if (state.isAir()) continue;
-                    if (!state.is(BlockTags.OVERWORLD_CARVER_REPLACEABLES)) continue;
+                    if (!state.is(com.terraforged.mod.data.ModTags.CARVER_REPLACEABLES)) continue;
                     if (!state.getFluidState().isEmpty()) continue;
 
                     chunk.setBlockState(pos, air, 0);

@@ -33,7 +33,7 @@ import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
-import net.minecraft.resources.RegistryFileCodec;
+import net.minecraft.core.registries.codec.RegistryFileCodec;
 import net.minecraft.resources.ResourceKey;
 
 import java.util.function.Function;
@@ -75,6 +75,6 @@ public interface LazyCodec<V> extends Codec<V>, Supplier<Codec<V>> {
     }
 
     static <V> LazyCodec<Holder<V>> registry(Codec<V> codec, Supplier<ResourceKey<Registry<V>>> key) {
-        return new Instance<>(() -> RegistryFileCodec.create(key.get(), codec));
+        return new Instance<>(() -> RegistryFileCodec.create(key.get(), codec, true));
     }
 }

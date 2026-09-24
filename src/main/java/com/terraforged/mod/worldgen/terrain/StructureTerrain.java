@@ -88,7 +88,7 @@ public class StructureTerrain {
     public StructureTerrain(ChunkAccess chunk, StructureManager manager) {
         var chunkPos = chunk.getPos();
 
-        manager.startsForStructure(chunkPos, TERRAIN_MODIFIED).forEach(start -> {
+        manager.startsForStructure(chunkPos.x(), chunkPos.z(), TERRAIN_MODIFIED).forEach(start -> {
             for (var piece : start.getPieces()) {
                 if (!piece.isCloseToChunk(chunkPos, RADIUS)) continue;
 

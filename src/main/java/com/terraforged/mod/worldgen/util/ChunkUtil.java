@@ -78,7 +78,7 @@ public class ChunkUtil {
         return isCaveBiomeSection(SectionPos.blockToSectionCoord(QuartPos.toBlock(quartY)));
     }
 
-    public static void fillNoiseBiomes(ChunkAccess chunk, BiomeSource source, GeneratorResource resource) {
+    public static void fillNoiseBiomes(ChunkAccess chunk, Source source, GeneratorResource resource) {
         var pos = chunk.getPos();
         int biomeX = QuartPos.fromBlock(pos.getMinBlockX());
         int biomeZ = QuartPos.fromBlock(pos.getMinBlockZ());
@@ -90,11 +90,10 @@ public class ChunkUtil {
 
         for (int dz = 0; dz < 4; dz++) {
             for (int dx = 0; dx < 4; dx++) {
-                var biome = source instanceof Source tf ? tf.getSurfaceBiome(biomeX + dx, biomeZ + dz)
-                        : source.getNoiseBiome(biomeX + dx, -1, biomeZ + dz, Source.NOOP_CLIMATE_SAMPLER);
+                var biome = source.getSurfaceBiome(biomeX + dx, biomeZ + dz);
                 biomeBuffer.set(dx, dz, biome);
 
-                var cave = source instanceof Source tf ? tf.getLayerBiome(biomeX + dx, biomeZ + dz) : null;
+                var cave = source.getLayerBiome(biomeX + dx, biomeZ + dz);
                 anyCaveBiome |= cave != null;
 
                 // Columns with no cave region keep their surface biome, so the deep buffer is always
@@ -113,8 +112,7 @@ public class ChunkUtil {
 
             // Now takes quart x/y/z rather than x/z; the buffer ignores position, but pass the
             // section's own y so the call is at least self-consistent.
-            chunkSection.fillBiomesFromNoise(deep ? caveBuffer : biomeBuffer,
-                    Source.NOOP_CLIMATE_SAMPLER, 0, QuartPos.fromSection(i), 0);
+            chunkSection.fillBiomesFromNoise(deep ? caveBuffer : biomeBuffer, 0, QuartPos.fromSection(i), 0);
         }
     }
 

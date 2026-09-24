@@ -111,7 +111,7 @@ public class NoiseCaveCarver {
             // is what happened the moment cave configs were added at min_y=-56. Upstream's layers all
             // bottom out around y=-32 so this never fired in four years.
             //
-            // Deliberately only bedrock, not BlockTags.OVERWORLD_CARVER_REPLACEABLES: that tag leaves out
+            // Deliberately only bedrock, not ModTags.CARVER_REPLACEABLES: that tag leaves out
             // gold, diamond, redstone and lapis ore, so filtering on it would strand those as loose
             // blocks in cave walls -- floating blocks, the exact complaint this carver keeps producing.
             if (existing.is(Blocks.BEDROCK)) continue;

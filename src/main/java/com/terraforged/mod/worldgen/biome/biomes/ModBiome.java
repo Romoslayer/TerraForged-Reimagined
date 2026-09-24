@@ -66,7 +66,6 @@ public record ModBiome(ResourceKey<Biome> key, Supplier<Biome> factory) {
         // longer exposes it, and precipitation became the boolean hasPrecipitation.
         builder.downfall(biome.climateSettings.downfall());
         builder.temperature(biome.getBaseTemperature());
-        builder.mobSpawnSettings(biome.getMobSettings());
         builder.hasPrecipitation(biome.hasPrecipitation());
         builder.specialEffects(biome.getSpecialEffects());
         builder.generationSettings(biome.getGenerationSettings());

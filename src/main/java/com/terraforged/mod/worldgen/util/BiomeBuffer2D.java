@@ -27,7 +27,6 @@ package com.terraforged.mod.worldgen.util;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeResolver;
-import net.minecraft.world.level.biome.Climate;
 
 public class BiomeBuffer2D implements BiomeResolver {
     public final Holder<Biome>[] biomeBuffer2D = create(4 * 4);
@@ -39,7 +38,7 @@ public class BiomeBuffer2D implements BiomeResolver {
     }
 
     @Override
-    public Holder<Biome> getNoiseBiome(int x, int y, int z, Climate.Sampler sampler) {
+    public Holder<Biome> getNoiseBiome(int x, int y, int z) {
         x &= 3;
         z &= 3;
         return biomeBuffer2D[z << 2 | x];

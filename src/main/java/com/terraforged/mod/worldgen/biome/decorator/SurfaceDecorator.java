@@ -25,32 +25,33 @@
 package com.terraforged.mod.worldgen.biome.decorator;
 
 import com.terraforged.mod.worldgen.Generator;
-import com.terraforged.mod.worldgen.Seeds;
 import com.terraforged.mod.worldgen.biome.surface.Surface;
 import com.terraforged.mod.worldgen.util.NoiseChunkUtil;
-import net.minecraft.server.level.WorldGenRegion;
+import net.minecraft.world.level.biome.BiomeManager;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.WorldGenerationContext;
 
 public class SurfaceDecorator {
-    public void decorate(ChunkAccess chunk, WorldGenRegion region, Generator generator, RandomState state) {
-        var context = new WorldGenerationContext(generator, region);
-        var noiseChunk = NoiseChunkUtil.getNoiseChunk(chunk, state, generator);
+    /**
+     * Runs vanilla's surface rules (26.3: material rules) over the chunk.
+     *
+     * @param terrainState TerraForged's own random state, whose router reports TerraForged's terrain height
+     *                     as the preliminary surface; see {@link Generator#terrainState}.
+     */
+    public void decorate(ChunkAccess chunk, BiomeManager biomeManager, Generator generator, RandomState terrainState) {
+        var context = new WorldGenerationContext(generator, chunk.getHeightAccessorForGeneration());
+        var rule = generator.getVanillaGen().getSettings().value().materialRule().value();
 
-        var biomeManager = region.getBiomeManager();
-
-        var surface = state.surfaceSystem();
-        var surfaceRules = generator.getVanillaGen().getSettings().value().surfaceRule();
-        // The biome registry argument became a Set<Holder<Biome>> of the biomes actually in play, and
-        // moved to the end of the parameter list.
-        surface.buildSurface(state, biomeManager, false, context, chunk, noiseChunk, surfaceRules,
-                generator.getBiomeSource().possibleBiomes());
+        try (var noiseChunk = NoiseChunkUtil.createSurfaceNoiseChunk(chunk, terrainState, generator)) {
+            // Every biome the source can place, as before 26.3, rather than only those near this chunk.
+            terrainState.surfaceSystem().buildSurface(terrainState, biomeManager, context, chunk, noiseChunk, rule,
+                    generator.getBiomeSource().possibleBiomes());
+        }
     }
 
-    public void decoratePost(ChunkAccess chunk, WorldGenRegion region, Generator generator) {
-        int seed = Seeds.get(region.getSeed());
-        var chunkData = generator.getChunkData(seed, chunk.getPos());
+    public void decoratePost(ChunkAccess chunk, Generator generator) {
+        var chunkData = generator.getChunkData(generator.getSeed(), chunk.getPos());
         // Miscellaneous > Erosion Decorator. On by default, as it always ran before it was a setting.
         if (generator.getSettings().miscellaneous.erosionDecorator) {
             Surface.apply(chunkData, chunk, generator, generator.getSettings().miscellaneous.plainStoneErosion);

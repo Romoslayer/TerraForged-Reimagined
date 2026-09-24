@@ -45,7 +45,7 @@ public interface ModBiomes {
         // BiomeGenerationSettings.Builder resolves features and carvers up front now, so it needs the
         // two lookups rather than taking keys and resolving them later.
         var features = lookup.lookupOrThrow(Registries.PLACED_FEATURE);
-        var carvers = lookup.lookupOrThrow(Registries.CONFIGURED_CARVER);
+        var carvers = lookup.lookupOrThrow(Registries.CARVER);
 
         TerraForged.register(BIOMES, "cave", ModBiome.create(lookup, Biomes.DRIPSTONE_CAVES, builder -> {
             var genSettings = new BiomeGenerationSettings.Builder(features, carvers);

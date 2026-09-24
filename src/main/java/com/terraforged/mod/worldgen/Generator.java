@@ -37,8 +37,11 @@ import com.terraforged.mod.worldgen.terrain.TerrainLevels;
 import com.terraforged.mod.worldgen.settings.SettingsSerializer;
 import com.terraforged.mod.worldgen.settings.TerraSettings;
 import com.terraforged.mod.worldgen.util.ChunkUtil;
+import com.terraforged.mod.worldgen.util.TerrainSurfaceLevel;
 import com.terraforged.mod.worldgen.util.ThreadPool;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.Registry;
@@ -53,18 +56,24 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.LegacyRandomSource;
+import net.minecraft.world.level.levelgen.NoiseRouter;
+import net.minecraft.world.level.levelgen.NoiseRouterData;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.blending.Blender;
+import net.minecraft.world.level.levelgen.densityfunction.SamplerContext;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import java.util.concurrent.Executor;
+
+import org.jspecify.annotations.Nullable;
 
 public class Generator extends ChunkGenerator implements IGenerator {
     public static final MapCodec<Generator> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
@@ -171,7 +180,7 @@ public class Generator extends ChunkGenerator implements IGenerator {
         // Identical to super.createState when no structure is overridden -- StructureOverrides returns
         // vanilla's own state in that case.
         return com.terraforged.mod.worldgen.settings.StructureOverrides.createState(structureSets, state, levelSeed,
-                biomeSource, settings.structures);
+                getOrigin(state), biomeSource, settings.structures);
     }
 
     protected HolderLookup.Provider getRegistries() {
@@ -245,31 +254,46 @@ public class Generator extends ChunkGenerator implements IGenerator {
         }, ThreadPool.EXECUTOR);
     }
 
+    /**
+     * 26.3 folded the noise, surface and carver chunk stages into one terrain stage. TerraForged's own three
+     * steps run here, in the order the separate stages used to call them -- fill, surface, carve -- so what
+     * each step sees is unchanged: the near-surface Deep Caves pass still runs before surface rules (entrance
+     * floors dressed) and the deep pass after them (deep floors bare rock). None of the three reads another
+     * chunk, so running them back to back is equivalent to running them as separate stages.
+     */
     @Override
-    public CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState state, StructureManager structureManager, ChunkAccess chunkAccess) {
+    public CompletableFuture<ChunkAccess> buildTerrain(ChunkAccess chunkAccess, Blender blender, RandomState state,
+                                                       StructureManager structureManager, BiomeManager biomes,
+                                                       @Nullable WorldGenRegion carverBiomeRegion,
+                                                       Set<Holder<Biome>> possibleBiomes) {
         return terrainCache().combineAsync(ThreadPool.EXECUTOR, seed, chunkAccess, (chunk, terrainData) -> {
-            ChunkUtil.fillChunk(getSeaLevel(), chunk, terrainData, ChunkUtil.FILLER, localResource.get());
-            ChunkUtil.primeHeightmaps(getSeaLevel(), chunk, terrainData, ChunkUtil.FILLER);
-            ChunkUtil.buildStructureTerrain(chunk, terrainData, structureManager);
-            // Miscellaneous > Deep Caves: TerraForged's own caves stop around y=-32. The near-surface part is carved
-            // here, before surface rules, so entrance floors are dressed; the rest in applyCarvers. See DeepCaves.
-            if (settings.miscellaneous.deepCaves) {
-                deepCaves(levelSeed).carve(chunk, structureManager,
-                        (x, z) -> terrainData.getHeight(Math.max(0, Math.min(15, x - chunk.getPos().getMinBlockX())),
-                                Math.max(0, Math.min(15, z - chunk.getPos().getMinBlockZ()))),
-                        (dx, dz) -> terrainData.getHeight(dx, dz),
-                        (dx, dz) -> terrainData.getRiver().get(dx, dz), true);
-            }
-            if (settings.miscellaneous.strataDecorator) {
-                com.terraforged.mod.worldgen.util.StrataDecorator.apply(chunk, seed, settings.miscellaneous);
-            }
+            fillFromNoise(chunk, terrainData, structureManager);
+            buildSurface(chunk, biomes);
+            applyCarvers(chunk, terrainData, structureManager);
             return chunk;
         });
     }
 
-    @Override
-    public void buildSurface(WorldGenRegion region, StructureManager structures, RandomState state, ChunkAccess chunk) {
-        biomeGenerator().surface(chunk, region, state, this);
+    private void fillFromNoise(ChunkAccess chunk, TerrainData terrainData, StructureManager structureManager) {
+        ChunkUtil.fillChunk(getSeaLevel(), chunk, terrainData, ChunkUtil.FILLER, localResource.get());
+        ChunkUtil.primeHeightmaps(getSeaLevel(), chunk, terrainData, ChunkUtil.FILLER);
+        ChunkUtil.buildStructureTerrain(chunk, terrainData, structureManager);
+        // Miscellaneous > Deep Caves: TerraForged's own caves stop around y=-32. The near-surface part is carved
+        // here, before surface rules, so entrance floors are dressed; the rest in applyCarvers. See DeepCaves.
+        if (settings.miscellaneous.deepCaves) {
+            deepCaves(levelSeed).carve(chunk, structureManager,
+                    (x, z) -> terrainData.getHeight(Math.max(0, Math.min(15, x - chunk.getPos().getMinBlockX())),
+                            Math.max(0, Math.min(15, z - chunk.getPos().getMinBlockZ()))),
+                    (dx, dz) -> terrainData.getHeight(dx, dz),
+                    (dx, dz) -> terrainData.getRiver().get(dx, dz), true);
+        }
+        if (settings.miscellaneous.strataDecorator) {
+            com.terraforged.mod.worldgen.util.StrataDecorator.apply(chunk, seed, settings.miscellaneous);
+        }
+    }
+
+    private void buildSurface(ChunkAccess chunk, BiomeManager biomes) {
+        biomeGenerator().surface(chunk, biomes, terrainState(), this);
 
         // Only when the Bedrock Layer settings differ from their defaults; vanilla's floor otherwise.
         if (!settings.world.bedrockLayer.isVanilla()) {
@@ -277,15 +301,12 @@ public class Generator extends ChunkGenerator implements IGenerator {
         }
     }
 
-    @Override
-    public void applyCarvers(WorldGenRegion region, long seed, RandomState state, BiomeManager biomes, StructureManager structures, ChunkAccess chunk) {
-        // MC 26.x carves in a single pass -- the old GenerationStep.Carving stage argument is gone.
-        // TerraForged ignored the stage anyway, so nothing is lost (and caves are no longer carved twice).
-        biomeGenerator().carve(seed, chunk, region, biomes, this, structures);
+    private void applyCarvers(ChunkAccess chunk, TerrainData terrainData, StructureManager structures) {
+        // The carver stage was handed the raw level seed, which the cave generator narrows to an int itself.
+        biomeGenerator().carve(levelSeed, chunk, this, structures);
 
         // Deep Caves below the near-surface zone: after surface rules, so deep cave floors stay bare rock.
         if (settings.miscellaneous.deepCaves) {
-            var terrainData = getChunkData(this.seed, chunk.getPos());
             deepCaves(levelSeed).carve(chunk, structures,
                     (x, z) -> terrainData.getHeight(Math.max(0, Math.min(15, x - chunk.getPos().getMinBlockX())),
                             Math.max(0, Math.min(15, z - chunk.getPos().getMinBlockZ()))),
@@ -303,6 +324,37 @@ public class Generator extends ChunkGenerator implements IGenerator {
         // hanging between two layers that stopped a block or two apart -- the floating blocks reported
         // inside mega caverns. See FloatingSheets.
         com.terraforged.mod.worldgen.cave.FloatingSheets.clear(chunk, structures);
+    }
+
+    private record SeededState(long seed, RandomState state) {}
+
+    private volatile SeededState terrainState;
+
+    /**
+     * The random state TerraForged's surface pass runs on: what 26.3 hands any non-vanilla generator (an
+     * empty noise router, stone, sea level 63, xoroshiro -- see {@code ChunkMap}) with one change, a
+     * {@code chunk_surface_level} that reports TerraForged's terrain height. Vanilla's surface rules read
+     * that as the preliminary surface; see {@link TerrainSurfaceLevel}.
+     */
+    public RandomState terrainState() {
+        long seed = levelSeed;
+        var cached = terrainState;
+        if (cached == null || cached.seed() != seed) {
+            synchronized (this) {
+                cached = terrainState;
+                if (cached == null || cached.seed() != seed) {
+                    var none = NoiseRouterData.none();
+                    var router = new NoiseRouter(none.temperature(), none.vegetation(), none.continents(),
+                            none.erosion(), none.depth(), none.ridges(), new TerrainSurfaceLevel(this),
+                            none.finalDensity());
+                    var state = RandomState.create(getRegistries().lookupOrThrow(Registries.NOISE), seed, false,
+                            Blocks.STONE.defaultBlockState(), 63, router);
+                    cached = new SeededState(seed, state);
+                    terrainState = cached;
+                }
+            }
+        }
+        return cached.state();
     }
 
     private volatile net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> deepDark;
@@ -356,11 +408,11 @@ public class Generator extends ChunkGenerator implements IGenerator {
         var chunkPos = region.getCenter();
         var position = chunkPos.getWorldPosition().atY(region.getMaxY());
 
-        var holder = region.getBiome(position);
         var random = new WorldgenRandom(new LegacyRandomSource(region.getSeed()));
         random.setDecorationSeed(region.getSeed(), chunkPos.getMinBlockX(), chunkPos.getMinBlockZ());
 
-        NaturalSpawner.spawnMobsForChunkGeneration(region, holder, chunkPos, random);
+        // 26.3 reads the spawn list from the environment attributes at the position, not from a biome holder.
+        NaturalSpawner.spawnMobsForChunkGeneration(region, position, chunkPos, random);
     }
 
     @Override
@@ -401,7 +453,7 @@ public class Generator extends ChunkGenerator implements IGenerator {
     }
 
     @Override
-    public void addDebugScreenInfo(List<String> lines, RandomState state, BlockPos pos) {
+    public void addDebugScreenInfo(List<String> lines, RandomState state, BlockPos pos, SamplerContext samplerContext) {
         int seed = this.seed;
 
         var sample = biomeSource.getBiomeSampler().getSample();

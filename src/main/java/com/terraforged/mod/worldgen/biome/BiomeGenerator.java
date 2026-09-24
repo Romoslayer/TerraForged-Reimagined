@@ -31,7 +31,6 @@ import com.terraforged.mod.worldgen.biome.decorator.SurfaceDecorator;
 import com.terraforged.mod.worldgen.biome.surface.Surface;
 import com.terraforged.mod.worldgen.cave.NoiseCaveGenerator;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.biome.BiomeManager;
@@ -55,15 +54,13 @@ public class BiomeGenerator {
         this.noiseCaveGenerator = new NoiseCaveGenerator(other.noiseCaveGenerator);
     }
 
-    public void surface(ChunkAccess chunk, WorldGenRegion region, RandomState state, Generator generator) {
-        surfaceDecorator.decorate(chunk, region, generator, state);
-        surfaceDecorator.decoratePost(chunk, region, generator);
+    public void surface(ChunkAccess chunk, BiomeManager biomes, RandomState terrainState, Generator generator) {
+        surfaceDecorator.decorate(chunk, biomes, generator, terrainState);
+        surfaceDecorator.decoratePost(chunk, generator);
     }
 
     public void carve(long seed,
                       ChunkAccess chunk,
-                      WorldGenRegion region,
-                      BiomeManager biomes,
                       Generator generator,
                       net.minecraft.world.level.StructureManager structures) {
 

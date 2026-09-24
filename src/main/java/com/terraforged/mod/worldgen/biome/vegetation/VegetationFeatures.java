@@ -26,19 +26,21 @@ package com.terraforged.mod.worldgen.biome.vegetation;
 
 import net.minecraft.core.registries.Registries;
 import com.google.common.collect.ImmutableSet;
-import com.terraforged.mod.util.ReflectionUtil;
 import com.terraforged.mod.worldgen.asset.VegetationConfig;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.GenerationStep;
-import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+import net.minecraft.world.level.levelgen.placement.BiomeFilter;
+import net.minecraft.world.level.levelgen.placement.CountOnEveryLayerPlacement;
+import net.minecraft.world.level.levelgen.placement.CountPlacement;
+import net.minecraft.world.level.levelgen.placement.InSquarePlacement;
+import net.minecraft.world.level.levelgen.placement.NoiseBasedCountPlacement;
+import net.minecraft.world.level.levelgen.placement.NoiseThresholdCountPlacement;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.levelgen.placement.PlacementModifier;
-import net.minecraft.world.level.levelgen.placement.PlacementModifierType;
 
-import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -47,21 +49,18 @@ public class VegetationFeatures {
     public static VegetationFeatures NONE = new VegetationFeatures();
     public static final int STAGE = GenerationStep.Decoration.VEGETAL_DECORATION.ordinal();
 
-    private static final MethodHandle FEATURE_GETTER = ReflectionUtil.field(PlacedFeature.class, Holder.class);
-    private static final MethodHandle PLACEMENTS_GETTER = ReflectionUtil.field(PlacedFeature.class, List.class);
+    // 26.3 dropped PlacementModifierType -- a modifier is identified by its codec now -- so modifiers are
+    // matched by exact class, which is how vanilla builds each of these.
+    private static final Set<Class<? extends PlacementModifier>> EXCLUSIONS = Set.of(
+            BiomeFilter.class,
+            CountPlacement.class,
+            CountOnEveryLayerPlacement.class,
+            NoiseBasedCountPlacement.class,
+            NoiseThresholdCountPlacement.class);
 
-    private static final Set<PlacementModifierType<?>> BIOME_CHECK = Set.of(PlacementModifierType.BIOME_FILTER);
-
-    private static final Set<PlacementModifierType<?>> EXCLUSIONS = Set.of(
-            PlacementModifierType.BIOME_FILTER,
-            PlacementModifierType.COUNT,
-            PlacementModifierType.COUNT_ON_EVERY_LAYER,
-            PlacementModifierType.NOISE_BASED_COUNT,
-            PlacementModifierType.NOISE_THRESHOLD_COUNT);
-
-    private static final Set<PlacementModifierType<?>> TREE_EXCLUSIONS = ImmutableSet.<PlacementModifierType<?>>builder()
+    private static final Set<Class<? extends PlacementModifier>> TREE_EXCLUSIONS = ImmutableSet.<Class<? extends PlacementModifier>>builder()
             .addAll(EXCLUSIONS)
-            .add(PlacementModifierType.IN_SQUARE)
+            .add(InSquarePlacement.class)
             .build();
 
     /**
@@ -156,30 +155,14 @@ public class VegetationFeatures {
         return false;
     }
 
-    public static PlacedFeature unwrap(Holder<PlacedFeature> supplier, Set<PlacementModifierType<?>> exclusions, boolean custom) {
+    public static PlacedFeature unwrap(Holder<PlacedFeature> supplier, Set<Class<? extends PlacementModifier>> exclusions, boolean custom) {
         if (!custom) return supplier.value();
 
-        try {
-            PlacedFeature placed = supplier.value();
+        // PlacedFeature is a record in 26.3; its parts used to be private fields read by reflection.
+        PlacedFeature placed = supplier.value();
+        var placements = new ArrayList<>(placed.placement());
+        placements.removeIf(placement -> exclusions.contains(placement.getClass()));
 
-            var feature = getFeature(placed);
-            var placements = new ArrayList<>(getPlacements(placed));
-            placements.removeIf(placement -> exclusions.contains(placement.type()));
-
-            return new PlacedFeature(feature, placements);
-        } catch (Throwable t) {
-            t.printStackTrace();
-            return supplier.value();
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    protected static Holder<ConfiguredFeature<?, ?>> getFeature(PlacedFeature feature) throws Throwable {
-        return (Holder<ConfiguredFeature<?, ?>>) FEATURE_GETTER.invokeExact(feature);
-    }
-
-    @SuppressWarnings("unchecked")
-    protected static List<PlacementModifier> getPlacements(PlacedFeature feature) throws Throwable {
-        return (List<PlacementModifier>) PLACEMENTS_GETTER.invokeExact(feature);
+        return new PlacedFeature(placed.feature(), placements);
     }
 }

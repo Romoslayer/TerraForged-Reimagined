@@ -28,8 +28,10 @@ import com.mojang.serialization.DynamicOps;
 import com.terraforged.mod.Environment;
 import com.terraforged.mod.TerraForged;
 import com.terraforged.mod.util.ReflectionUtil;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.core.Registry;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.ConcurrentHolderGetter;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.RegistryOps;
 
@@ -98,10 +100,8 @@ public class RegistryAccessUtil {
      * <p>This is the case that matters during datapack loading: {@code RegistryDataLoader} builds ops
      * over an anonymous {@code RegistryInfoLookup} that is not a {@code RegistryAccess} and holds no
      * reference to one, so there is nothing to unwrap — the registries being loaded do not exist as a
-     * {@code RegistryAccess} yet. Each {@code RegistryInfo} does carry a {@code HolderGetter}, and in
-     * every path Minecraft uses that getter is the registry's own
-     * {@link HolderLookup.RegistryLookup} (see {@code RegistryInfo#fromRegistryLookup}, which passes
-     * the lookup in as both owner and getter), so it can be handed back as one.
+     * {@code RegistryAccess} yet. What it hands back per registry is a {@code HolderGetter}; see
+     * {@link #asRegistryLookup} for turning that back into the registry.
      */
     private record InfoLookupProvider(RegistryOps.RegistryInfoLookup lookup) implements HolderLookup.Provider {
         @Override
@@ -113,31 +113,55 @@ public class RegistryAccessUtil {
         }
 
         /**
-         * Prefers {@code owner()} over {@code getter()}, which is not an arbitrary choice.
-         *
-         * <p>For a registry still being loaded, {@code RegistryLoadTask#createRegistryInfo} sets
-         * {@code owner} to the {@code MappedRegistry} itself but {@code getter} to a concurrent
-         * wrapper that resolves single elements and blocks until they are registered. That wrapper is
-         * deliberately not a {@link HolderLookup.RegistryLookup} — you cannot enumerate a registry
-         * mid-load — so taking {@code getter} yields nothing and the registry looks absent. Taking
-         * {@code owner} gives the real lookup.
-         *
-         * <p>That is only safe because every caller here is lazy and runs after loading has finished;
-         * see {@code Source.Parts}. Enumerating through this during a load would race.
+         * Only safe because every caller here is lazy and runs after loading has finished; see
+         * {@code Source.Parts}. Enumerating through this during a load would race.
          */
         @Override
         @SuppressWarnings("unchecked")
         public <T> Optional<HolderLookup.RegistryLookup<T>> lookup(ResourceKey<? extends Registry<? extends T>> key) {
-            return lookup.lookup(key).map(info -> {
-                if (info.owner() instanceof HolderLookup.RegistryLookup<?> owner) {
-                    return (HolderLookup.RegistryLookup<T>) owner;
-                }
-                if (info.getter() instanceof HolderLookup.RegistryLookup<?> getter) {
-                    return (HolderLookup.RegistryLookup<T>) getter;
-                }
-                return null;
-            });
+            return lookup.lookup(key).map(getter -> (HolderLookup.RegistryLookup<T>) asRegistryLookup(getter));
         }
+    }
+
+    private static final MethodHandle CONCURRENT_ORIGINAL =
+            ReflectionUtil.field(ConcurrentHolderGetter.class, HolderGetter.class);
+
+    /**
+     * The registry behind a getter a {@code RegistryInfoLookup} returned.
+     *
+     * <p>Registries that were already loaded come back as themselves. A registry still being loaded comes
+     * back as its load task's {@link ConcurrentHolderGetter}, a wrapper that resolves single elements and
+     * blocks until they are registered -- deliberately not a {@link HolderLookup.RegistryLookup}, since a
+     * registry cannot be enumerated mid-load -- so taken at face value the registry looks absent.
+     *
+     * <p>Up to 26.2 the lookup returned a {@code RegistryInfo} whose {@code owner} was the
+     * {@code MappedRegistry} itself, and that was used. 26.3 returns the getter alone, so the registry is
+     * recovered from it: the wrapper's {@code original} is the registry's registration lookup
+     * ({@code MappedRegistry#createRegistrationLookup}), an inner class whose enclosing instance is the
+     * registry. Same object as the old {@code owner}, reached two steps further in.
+     */
+    private static HolderLookup.RegistryLookup<?> asRegistryLookup(HolderGetter<?> getter) {
+        if (getter instanceof HolderLookup.RegistryLookup<?> lookup) return lookup;
+
+        try {
+            Object inner = getter instanceof ConcurrentHolderGetter<?> concurrent
+                    ? CONCURRENT_ORIGINAL.invoke(concurrent)
+                    : getter;
+            if (inner instanceof HolderLookup.RegistryLookup<?> lookup) return lookup;
+
+            for (var field : inner.getClass().getDeclaredFields()) {
+                if (HolderLookup.RegistryLookup.class.isAssignableFrom(field.getType())) {
+                    field.setAccessible(true);
+                    return (HolderLookup.RegistryLookup<?>) field.get(inner);
+                }
+            }
+        } catch (Throwable t) {
+            TerraForged.LOG.warn("Unable to recover a registry from {}", getter.getClass().getName(), t);
+            return null;
+        }
+
+        TerraForged.LOG.warn("Unable to recover a registry from {}", getter.getClass().getName());
+        return null;
     }
 
     public static void printRegistryContents(Registry<?> registry) {
