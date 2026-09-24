@@ -74,7 +74,8 @@
             }
           ]
         }
-      }
+      },
+      "modifier": "overlay"
     }
   },
   "has_precipitation": true,

@@ -48,6 +48,7 @@ sourceSets.main {
     // Excluded from the Fabric build too: upstream's datagen path, not ported (see the root build).
     java.exclude 'com/terraforged/mod/data/gen/**'
     java.exclude 'com/terraforged/mod/util/TagLoader.java'
+    java.exclude 'com/terraforged/mod/worldgen/test/**'
 
     resources.srcDir rootProject.file('src/main/resources')
     resources.exclude 'fabric.mod.json'
