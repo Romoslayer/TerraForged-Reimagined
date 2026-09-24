@@ -94,20 +94,23 @@ idea {
 }
 
 // Installs the freshly built jar into a Minecraft instance's mods folder, so the instance is never
-// running a stale build. Set instance_mods_dir in ~/.gradle/gradle.properties; unset or missing = skipped.
+// running a stale build. Set terraforged.deploy.fabric.<mc_version> (e.g. terraforged.deploy.fabric.26.2)
+// in ~/.gradle/gradle.properties; unset or missing = skipped. The key names the loader and Minecraft
+// version so a build can only ever install into an instance it can run in, and the mod so the user-level
+// file, which overrides every project, cannot redirect another project's deploy.
 //
 // It deletes older terraforged-*.jar files first. That matters: the file name carries the version, so
 // bumping mod_version would otherwise leave the old jar behind and Fabric would refuse to start with
 // two copies of the same mod.
 tasks.register('deployToInstance') {
     group = 'build'
-    description = 'Copies the built jar into the mods folder given by instance_mods_dir.'
+    description = "Copies the built jar into the mods folder given by terraforged.deploy.fabric.${mc_version}."
 
     // Resolved by path rather than by depending on remapJar: Loom registers that task later than this
     // block is evaluated, so referencing it by name here fails with "Task with name 'remapJar' not
     // found". Running as a finalizer of `build` already guarantees the jar exists by this point.
     def builtJar = layout.buildDirectory.file("libs/${base.archivesName.get()}-${version}.jar")
-    def targetDir = providers.gradleProperty('instance_mods_dir')
+    def targetDir = providers.gradleProperty("terraforged.deploy.fabric.${mc_version}")
 
     onlyIf { targetDir.isPresent() && !targetDir.get().trim().isEmpty() }
 

@@ -54,7 +54,8 @@ underground biomes and newer structures.
 ```
 
 The jar is written to `build/libs/`. To have each build copied into a Minecraft instance, set
-`instance_mods_dir` to that instance's `mods` folder in your user-level `~/.gradle/gradle.properties`.
+`terraforged.deploy.fabric.26.2` to that instance's `mods` folder in your user-level
+`~/.gradle/gradle.properties`.
 
 ## Credits
 
