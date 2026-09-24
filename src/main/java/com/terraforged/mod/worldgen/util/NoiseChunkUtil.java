@@ -36,19 +36,20 @@ public class NoiseChunkUtil {
     /**
      * The {@code NoiseChunk} the surface system reads while dressing a chunk.
      *
-     * <p>Up to 26.2 this reflected TerraForged's heights into the noise chunk's preliminary-surface cache.
-     * 26.3's noise chunk has no such cache -- it is only a density volume, its samplers and an aquifer --
-     * and the surface system samples the preliminary surface from {@code terrainState}'s router instead,
-     * which carries {@link TerrainSurfaceLevel}. See {@link Generator#terrainState}.
+     * <p>Up to 26.2 this also tried to reflect TerraForged's heights into the noise chunk's preliminary-surface
+     * cache, and skipped doing so if the cache was already populated -- which it always was, because the
+     * noise chunk's own aquifer fills it on construction. So the rules read the empty router's 0, and
+     * dressed every column above roughly y=-5. 26.3's noise chunk has no such cache; the surface system
+     * samples the router's {@code chunk_surface_level}, which for the level's random state is that same 0.
      *
-     * <p>Close it when done: it borrows a density buffer pool from {@code terrainState}.
+     * <p>Close it when done: it borrows a density buffer pool from {@code state}.
      */
-    public static NoiseChunk createSurfaceNoiseChunk(ChunkAccess chunk, RandomState terrainState, Generator generator) {
+    public static NoiseChunk createSurfaceNoiseChunk(ChunkAccess chunk, RandomState state, Generator generator) {
         var vanilla = generator.getVanillaGen();
         var pos = chunk.getPos();
         var heights = chunk.getHeightAccessorForGeneration();
         var volume = new DensityVolume(16, heights.getHeight(), 16, pos.getMinBlockX(), heights.getMinY(), pos.getMinBlockZ());
-        return new NoiseChunk(terrainState, Beardifier.EMPTY, vanilla.getSurfaceSettings(), vanilla.getGlobalFluidPicker(),
+        return new NoiseChunk(state, Beardifier.EMPTY, vanilla.getSurfaceSettings(), vanilla.getGlobalFluidPicker(),
                 Blender.empty(), volume);
     }
 }

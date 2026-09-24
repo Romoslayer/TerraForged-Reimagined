@@ -37,11 +37,9 @@ import com.terraforged.mod.worldgen.terrain.TerrainLevels;
 import com.terraforged.mod.worldgen.settings.SettingsSerializer;
 import com.terraforged.mod.worldgen.settings.TerraSettings;
 import com.terraforged.mod.worldgen.util.ChunkUtil;
-import com.terraforged.mod.worldgen.util.TerrainSurfaceLevel;
 import com.terraforged.mod.worldgen.util.ThreadPool;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.Registry;
@@ -56,8 +54,6 @@ import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.LegacyRandomSource;
-import net.minecraft.world.level.levelgen.NoiseRouter;
-import net.minecraft.world.level.levelgen.NoiseRouterData;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.WorldgenRandom;
 import net.minecraft.world.level.levelgen.blending.Blender;
@@ -268,7 +264,7 @@ public class Generator extends ChunkGenerator implements IGenerator {
                                                        Set<Holder<Biome>> possibleBiomes) {
         return terrainCache().combineAsync(ThreadPool.EXECUTOR, seed, chunkAccess, (chunk, terrainData) -> {
             fillFromNoise(chunk, terrainData, structureManager);
-            buildSurface(chunk, biomes);
+            buildSurface(chunk, biomes, state);
             applyCarvers(chunk, terrainData, structureManager);
             return chunk;
         });
@@ -292,8 +288,15 @@ public class Generator extends ChunkGenerator implements IGenerator {
         }
     }
 
-    private void buildSurface(ChunkAccess chunk, BiomeManager biomes) {
-        biomeGenerator().surface(chunk, biomes, terrainState(), this);
+    /**
+     * Surface rules run on the level's own random state, as they did up to 26.2. For a non-vanilla generator
+     * that state carries an empty noise router ({@code ChunkMap}), so the preliminary surface the rules read is
+     * 0 everywhere and they dress every column above roughly y=-5. That is what 26.2 actually did: its
+     * attempt to feed TerraForged's heights into the noise chunk's cache never took effect, because the
+     * aquifer filled that cache first -- see {@code NoiseChunkUtil}.
+     */
+    private void buildSurface(ChunkAccess chunk, BiomeManager biomes, RandomState state) {
+        biomeGenerator().surface(chunk, biomes, state, this);
 
         // Only when the Bedrock Layer settings differ from their defaults; vanilla's floor otherwise.
         if (!settings.world.bedrockLayer.isVanilla()) {
@@ -326,36 +329,6 @@ public class Generator extends ChunkGenerator implements IGenerator {
         com.terraforged.mod.worldgen.cave.FloatingSheets.clear(chunk, structures);
     }
 
-    private record SeededState(long seed, RandomState state) {}
-
-    private volatile SeededState terrainState;
-
-    /**
-     * The random state TerraForged's surface pass runs on: what 26.3 hands any non-vanilla generator (an
-     * empty noise router, stone, sea level 63, xoroshiro -- see {@code ChunkMap}) with one change, a
-     * {@code chunk_surface_level} that reports TerraForged's terrain height. Vanilla's surface rules read
-     * that as the preliminary surface; see {@link TerrainSurfaceLevel}.
-     */
-    public RandomState terrainState() {
-        long seed = levelSeed;
-        var cached = terrainState;
-        if (cached == null || cached.seed() != seed) {
-            synchronized (this) {
-                cached = terrainState;
-                if (cached == null || cached.seed() != seed) {
-                    var none = NoiseRouterData.none();
-                    var router = new NoiseRouter(none.temperature(), none.vegetation(), none.continents(),
-                            none.erosion(), none.depth(), none.ridges(), new TerrainSurfaceLevel(this),
-                            none.finalDensity());
-                    var state = RandomState.create(getRegistries().lookupOrThrow(Registries.NOISE), seed, false,
-                            Blocks.STONE.defaultBlockState(), 63, router);
-                    cached = new SeededState(seed, state);
-                    terrainState = cached;
-                }
-            }
-        }
-        return cached.state();
-    }
 
     private volatile net.minecraft.core.Holder<net.minecraft.world.level.biome.Biome> deepDark;
 

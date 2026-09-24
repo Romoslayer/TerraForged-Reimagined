@@ -36,16 +36,16 @@ public class SurfaceDecorator {
     /**
      * Runs vanilla's surface rules (26.3: material rules) over the chunk.
      *
-     * @param terrainState TerraForged's own random state, whose router reports TerraForged's terrain height
-     *                     as the preliminary surface; see {@link Generator#terrainState}.
+     * @param state the level's random state; see {@code Generator#buildSurface} for why that, and not one
+     *              carrying TerraForged's heights, is what reproduces 26.2's surfaces
      */
-    public void decorate(ChunkAccess chunk, BiomeManager biomeManager, Generator generator, RandomState terrainState) {
+    public void decorate(ChunkAccess chunk, BiomeManager biomeManager, Generator generator, RandomState state) {
         var context = new WorldGenerationContext(generator, chunk.getHeightAccessorForGeneration());
         var rule = generator.getVanillaGen().getSettings().value().materialRule().value();
 
-        try (var noiseChunk = NoiseChunkUtil.createSurfaceNoiseChunk(chunk, terrainState, generator)) {
+        try (var noiseChunk = NoiseChunkUtil.createSurfaceNoiseChunk(chunk, state, generator)) {
             // Every biome the source can place, as before 26.3, rather than only those near this chunk.
-            terrainState.surfaceSystem().buildSurface(terrainState, biomeManager, context, chunk, noiseChunk, rule,
+            state.surfaceSystem().buildSurface(state, biomeManager, context, chunk, noiseChunk, rule,
                     generator.getBiomeSource().possibleBiomes());
         }
     }

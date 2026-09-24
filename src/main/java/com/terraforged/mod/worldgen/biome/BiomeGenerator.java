@@ -54,8 +54,8 @@ public class BiomeGenerator {
         this.noiseCaveGenerator = new NoiseCaveGenerator(other.noiseCaveGenerator);
     }
 
-    public void surface(ChunkAccess chunk, BiomeManager biomes, RandomState terrainState, Generator generator) {
-        surfaceDecorator.decorate(chunk, biomes, generator, terrainState);
+    public void surface(ChunkAccess chunk, BiomeManager biomes, RandomState state, Generator generator) {
+        surfaceDecorator.decorate(chunk, biomes, generator, state);
         surfaceDecorator.decoratePost(chunk, generator);
     }
 
