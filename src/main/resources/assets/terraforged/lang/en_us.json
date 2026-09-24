@@ -1,0 +1,52 @@
+{
+  "generator.terraforged.normal": "TerraForged",
+
+  "terraforged.screen.title": "TerraForged Settings",
+  "terraforged.screen.page.presets": "Presets & Defaults",
+  "terraforged.screen.page.world": "World Settings",
+  "terraforged.screen.page.climate": "Climate Settings",
+  "terraforged.screen.page.terrain": "Terrain Settings",
+  "terraforged.screen.page.rivers": "River Settings",
+  "terraforged.screen.page.filters": "Filter Settings",
+  "terraforged.screen.page.structures": "Structure Settings",
+  "terraforged.screen.page.miscellaneous": "Miscellaneous Settings",
+
+  "terraforged.screen.coords": "Coords",
+  "terraforged.screen.tooltips": "Tooltips",
+  "terraforged.screen.zoom": "Zoom",
+  "terraforged.screen.new_seed": "New Seed",
+
+  "terraforged.screen.general": "General",
+  "terraforged.screen.properties": "Properties",
+
+  "terraforged.screen.world_top": "World Height",
+  "terraforged.screen.world_top.tooltip": "The height terrain is scaled against. Raising it makes mountains taller; it does not raise the build limit.",
+  "terraforged.screen.world_bottom": "World Bottom",
+  "terraforged.screen.world_bottom.tooltip": "The lowest block the world generates. Limited by the overworld's dimension height.",
+  "terraforged.screen.sea_level": "Sea Level",
+  "terraforged.screen.sea_level.tooltip": "The height of the ocean surface. Clamped to at most half the world height.",
+  "terraforged.screen.sea_floor": "Sea Floor",
+  "terraforged.screen.sea_floor.tooltip": "The height the deepest ocean beds reach. Always kept below sea level.",
+  "terraforged.screen.base_height": "Base Height",
+  "terraforged.screen.base_height.tooltip": "The height most land sits at. Lower values give lower-lying terrain with more of the world above it.",
+
+  "terraforged.screen.auto_scale": "Auto Scale",
+  "terraforged.screen.auto_scale.tooltip": "Stretches terrain horizontally to suit the world height, so taller worlds do not get steeper. Global Horizontal Scale is applied on top.",
+  "terraforged.screen.horizontal_scale": "Global Horizontal Scale",
+  "terraforged.screen.horizontal_scale.tooltip": "How large terrain features are. Higher values make continents, mountain ranges and biomes wider and further apart.",
+
+  "terraforged.screen.preset_name": "Preset name",
+  "terraforged.screen.create": "Create",
+  "terraforged.screen.load": "Load",
+  "terraforged.screen.save": "Save",
+  "terraforged.screen.reset": "Reset",
+  "terraforged.screen.delete": "Delete",
+  "terraforged.screen.set_default": "Set As Default",
+  "terraforged.screen.is_default": " (default)",
+
+  "terraforged.preview": "Terrain Preview",
+  "terraforged.preview.pending": "Generating...",
+  "terraforged.preview.area": "Area:",
+  "terraforged.preview.terrain": "Terrain:",
+  "terraforged.preview.biome": "Biome:"
+}

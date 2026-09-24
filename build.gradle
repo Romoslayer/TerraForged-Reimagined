@@ -1,0 +1,148 @@
+plugins {
+    id 'java-library'
+    id 'eclipse'
+    id 'idea'
+    id 'net.fabricmc.fabric-loom' version '1.18.+'
+}
+
+version = mod_version
+group = maven_group
+base.archivesName = "${archives_name}-${mc_version}-fabric"
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(java_version.toInteger())
+
+// The datapack *export* path is not ported yet, and is excluded rather than deleted so the work is
+// still there to pick up. It is upstream's Forge-datagen plumbing: it builds a mutable RegistryAccess
+// via RegistryAccess.builtinCopy() and binds tags via TagManager and Registry#bindTags, all three of
+// which are gone, and it loads mod resources through Forge's ModList/ResourcePackLoader. Reviving it
+// means rewriting it against Fabric's datagen API.
+//
+// Nothing at runtime depends on it: the generated datapack is already committed under
+// src/main/resources/default, and neither entrypoint reaches DataGen. Delete these two lines to
+// bring it back into the build.
+sourceSets.main.java {
+    exclude 'com/terraforged/mod/data/gen/**'
+    exclude 'com/terraforged/mod/util/TagLoader.java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+loom {
+    runs {
+        configureEach {
+            ideConfigGenerated(true)
+            runDir('run')
+        }
+
+        client {
+            client()
+            setConfigName('Fabric: Client')
+        }
+
+        server {
+            server()
+            setConfigName('Fabric: Server')
+        }
+    }
+
+    mixin {
+        useLegacyMixinAp = false
+    }
+
+    accessWidenerPath.set(file("src/main/resources/${mod_id}.accesswidener"))
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${mc_version}"
+
+    implementation "net.fabricmc:fabric-loader:${loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}+${mc_version}"
+
+    annotationProcessor "io.github.llamalad7:mixinextras-fabric:${mixin_extras_version}"
+    implementation(include("io.github.llamalad7:mixinextras-fabric:${mixin_extras_version}"))
+}
+
+// MIT requires each copyright notice to travel with the code. LICENSE covers TerraForged's own code,
+// the reconstructed engine and Cereal (all "TerraForged"); the vendored com.terraforged.noise package
+// is Noise2D (dags) and parts of it derive from FastNoise_Java (Jordan Peck), each with its own holder.
+jar {
+    from(files('LICENSE', 'LICENSE-Noise2D', 'LICENSE-FastNoise'))
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release.set(java_version.toInteger())
+}
+
+processResources {
+    inputs.property "version", project.version
+    inputs.property "mod_name", mod_name
+    filteringCharset "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version, "mod_name": mod_name
+    }
+}
+
+idea {
+    module {
+        downloadSources = true
+        downloadJavadoc = true
+    }
+}
+
+// Installs the freshly built jar into a Minecraft instance's mods folder, so the instance is never
+// running a stale build. Set instance_mods_dir in ~/.gradle/gradle.properties; unset or missing = skipped.
+//
+// It deletes older terraforged-*.jar files first. That matters: the file name carries the version, so
+// bumping mod_version would otherwise leave the old jar behind and Fabric would refuse to start with
+// two copies of the same mod.
+tasks.register('deployToInstance') {
+    group = 'build'
+    description = 'Copies the built jar into the mods folder given by instance_mods_dir.'
+
+    // Resolved by path rather than by depending on remapJar: Loom registers that task later than this
+    // block is evaluated, so referencing it by name here fails with "Task with name 'remapJar' not
+    // found". Running as a finalizer of `build` already guarantees the jar exists by this point.
+    def builtJar = layout.buildDirectory.file("libs/${base.archivesName.get()}-${version}.jar")
+    def targetDir = providers.gradleProperty('instance_mods_dir')
+
+    onlyIf { targetDir.isPresent() && !targetDir.get().trim().isEmpty() }
+
+    doLast {
+        def target = file(targetDir.get().trim())
+        if (!target.isDirectory()) {
+            logger.lifecycle("deployToInstance: skipped -- no such directory: ${target}")
+            return
+        }
+
+        def source = builtJar.get().asFile
+        if (!source.isFile()) {
+            throw new GradleException("deployToInstance: expected jar not found at ${source}")
+        }
+        target.listFiles()?.each { existing ->
+            if (existing.isFile() && existing.name.toLowerCase().startsWith('terraforged-')
+                    && existing.name.toLowerCase().endsWith('.jar')) {
+                if (!existing.delete()) {
+                    throw new GradleException("deployToInstance: could not remove ${existing.name}."
+                            + " Minecraft is probably running and holding the file -- close it and build again.")
+                }
+            }
+        }
+
+        def dest = new File(target, source.name)
+        try {
+            java.nio.file.Files.copy(source.toPath(), dest.toPath(),
+                    java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        } catch (IOException e) {
+            throw new GradleException("deployToInstance: could not write ${dest}."
+                    + " Minecraft is probably running -- close it and build again.", e)
+        }
+
+        logger.lifecycle("deployToInstance: installed ${dest}")
+    }
+}
+
+tasks.named('build') { finalizedBy('deployToInstance') }

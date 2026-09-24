@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "terraforged",
+  "version": "${version}",
+
+  "name": "${mod_name}",
+  "description": "Replaces the vanilla overworld with large-scale, erosion-shaped landscapes. An unofficial port of TerraForged by dags and Won-Ton.",
+  "authors": ["Romoslayer"],
+  "contributors": ["dags (original TerraForged)", "Won-Ton (original TerraForged)"],
+  "contact": {
+    "sources": "https://github.com/Romoslayer/TerraForged-Reimagined",
+    "issues": "https://github.com/Romoslayer/TerraForged-Reimagined/issues"
+  },
+
+  "license": "MIT",
+  "icon": "terraforged.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.terraforged.mod.platform.fabric.TFMain"],
+    "client": ["com.terraforged.mod.platform.fabric.client.TFClient"]
+  },
+  "mixins": ["terraforged.mixins.json"],
+  "accessWidener": "terraforged.accesswidener",
+
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "fabric-api": "*",
+    "minecraft": "~26.2",
+    "java": ">=25"
+  }
+}

@@ -1,0 +1,31 @@
+accessWidener v2 official
+
+# MC 26.x ships already-named jars, so this must declare the "official" namespace, not "named" --
+# Loom fails the whole build with "Expected official namespace" otherwise.
+
+# Biome's climate data has no public accessor any more. Biome#getDownfall() and #getPrecipitation()
+# are both gone: precipitation is positional now (getPrecipitationAt), and downfall is not exposed at
+# all. BiomeUtil classifies biomes into TerraForged's BiomeTypes using exactly those two values, so
+# it reads them off the record directly rather than approximating the classification.
+#
+# See BiomeUtil#getDownfall / #getPrecipitation for how these are used, and why reading the raw
+# values keeps the biome classification identical to upstream's.
+accessible class net/minecraft/world/level/biome/Biome$ClimateSettings
+accessible field net/minecraft/world/level/biome/Biome climateSettings Lnet/minecraft/world/level/biome/Biome$ClimateSettings;
+
+# Structure placement overrides (TerraSettings.Structures, the Structures settings page).
+#
+# ChunkGeneratorStructureState's constructor is private and its only public factories either read every
+# structure set straight from the registry (createForNormal) or zero the concentric-rings seed
+# (createForFlat, which would move every stronghold). Building the state from an edited list with the
+# normal seed needs the constructor itself.
+accessible method net/minecraft/world/level/chunk/ChunkGeneratorStructureState <init> (Lnet/minecraft/world/level/levelgen/RandomState;Lnet/minecraft/world/level/biome/BiomeSource;JJLjava/util/List;)V
+
+# A replacement placement has to carry over the original's other properties -- locate offset, frequency,
+# frequency reduction, exclusion zone -- or edited structures would silently lose them. They are only
+# exposed as protected accessors.
+accessible method net/minecraft/world/level/levelgen/structure/placement/StructurePlacement locateOffset ()Lnet/minecraft/core/Vec3i;
+accessible method net/minecraft/world/level/levelgen/structure/placement/StructurePlacement frequencyReductionMethod ()Lnet/minecraft/world/level/levelgen/structure/placement/StructurePlacement$FrequencyReductionMethod;
+accessible method net/minecraft/world/level/levelgen/structure/placement/StructurePlacement frequency ()F
+accessible method net/minecraft/world/level/levelgen/structure/placement/StructurePlacement salt ()I
+accessible method net/minecraft/world/level/levelgen/structure/placement/StructurePlacement exclusionZone ()Ljava/util/Optional;
