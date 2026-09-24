@@ -8,7 +8,8 @@
   "authors": ["Romoslayer"],
   "contributors": ["dags (original TerraForged)", "Won-Ton (original TerraForged)"],
   "contact": {
-    "sources": "https://github.com/Romoslayer/TerraForged-Reimagined",
+    "homepage": "https://www.curseforge.com/minecraft/mc-mods/terraforged-reimagined",
+    "sources":"https://github.com/Romoslayer/TerraForged-Reimagined",
     "issues": "https://github.com/Romoslayer/TerraForged-Reimagined/issues"
   },
 

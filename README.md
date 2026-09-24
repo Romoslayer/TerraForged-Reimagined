@@ -7,6 +7,10 @@ mountain ranges, river networks and climate-driven biome placement.
 TerraForged was created by **dags** and **Won-Ton** and is no longer maintained. This port is not
 affiliated with or endorsed by them.
 
+Download: [CurseForge](https://www.curseforge.com/minecraft/mc-mods/terraforged-reimagined).
+This is a **beta**: please report problems in [Issues](https://github.com/Romoslayer/TerraForged-Reimagined/issues)
+with your seed, the coordinates, and your mod list.
+
 ## Requirements
 
 - Minecraft 26.2
