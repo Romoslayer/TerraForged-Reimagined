@@ -1,7 +1,7 @@
 # TerraForged Reimagined
 
-An unofficial port of [TerraForged](https://github.com/TerraForged/TerraForged) to **Minecraft 26.2 on
-Fabric**. It replaces the overworld generator with large-scale, erosion-shaped landscapes: continents,
+An unofficial port of [TerraForged](https://github.com/TerraForged/TerraForged) to **Minecraft 26.2**, for
+**Fabric** and **NeoForge**. It replaces the overworld generator with large-scale, erosion-shaped landscapes: continents,
 mountain ranges, river networks and climate-driven biome placement.
 
 TerraForged was created by **dags** and **Won-Ton** and is no longer maintained. This port is not
@@ -13,10 +13,12 @@ with your seed, the coordinates, and your mod list.
 
 ## Requirements
 
-- Minecraft 26.2
-- Fabric Loader 0.19.3 or newer
-- Fabric API
-- Java 25
+- Minecraft 26.2 and Java 25
+- **Fabric:** Fabric Loader 0.19.3 or newer, and Fabric API
+- **NeoForge:** NeoForge for 26.2
+
+The Fabric build is the one released so far; the NeoForge build is new and has been checked on a
+dedicated server, where it generates the same world as the Fabric build.
 
 ## Usage
 
@@ -53,9 +55,10 @@ underground biomes and newer structures.
 ./gradlew build
 ```
 
-The jar is written to `build/libs/`. To have each build copied into a Minecraft instance, set
-`terraforged.deploy.fabric.26.2` to that instance's `mods` folder in your user-level
-`~/.gradle/gradle.properties`.
+This builds both loaders from the same sources: the Fabric jar in `build/libs/` and the NeoForge jar in
+`neoforge/build/libs/`. To have each build copied into a Minecraft instance, set
+`terraforged.deploy.fabric.26.2` or `terraforged.deploy.neoforge.26.2` to that instance's `mods` folder
+in your user-level `~/.gradle/gradle.properties`.
 
 ## Credits
 

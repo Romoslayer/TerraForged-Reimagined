@@ -25,6 +25,7 @@
 package com.terraforged.mod.worldgen.biome.biomes;
 
 import net.minecraft.core.registries.Registries;
+import com.terraforged.mod.CommonAPI;
 import com.terraforged.mod.TerraForged;
 import net.minecraft.core.Registry;
 import net.minecraft.core.HolderLookup;
@@ -62,9 +63,9 @@ public record ModBiome(ResourceKey<Biome> key, Supplier<Biome> factory) {
     private static Biome.BiomeBuilder builderOf(HolderLookup.Provider lookup, ResourceKey<Biome> parent) {
         var biome = lookup.lookupOrThrow(Registries.BIOME).getOrThrow(parent).value();
         var builder = new Biome.BiomeBuilder();
-        // downfall is read off the climate record (opened by the access widener) because Biome no
-        // longer exposes it, and precipitation became the boolean hasPrecipitation.
-        builder.downfall(biome.climateSettings.downfall());
+        // downfall is read off the climate record (see CommonAPI#getDownfall) because Biome no longer
+        // exposes it, and precipitation became the boolean hasPrecipitation.
+        builder.downfall(CommonAPI.get().getDownfall(biome));
         builder.temperature(biome.getBaseTemperature());
         builder.mobSpawnSettings(biome.getMobSettings());
         builder.hasPrecipitation(biome.hasPrecipitation());

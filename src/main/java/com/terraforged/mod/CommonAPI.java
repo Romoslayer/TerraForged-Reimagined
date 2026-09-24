@@ -24,11 +24,16 @@
 
 package com.terraforged.mod;
 
+import com.mojang.serialization.Codec;
 import com.terraforged.mod.registry.RegistryManager;
 import com.terraforged.mod.util.ApiHolder;
 import com.terraforged.mod.worldgen.biome.util.matcher.BiomeMatcher;
 import com.terraforged.mod.worldgen.biome.util.matcher.BiomeTagMatcher;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.BiomeTags;
+import net.minecraft.world.level.biome.Biome;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,6 +43,31 @@ public interface CommonAPI {
 
     default Path getContainer() {
         return Paths.get(".");
+    }
+
+    /**
+     * Adds an entry to one of vanilla's built-in registries (the chunk generator and biome source
+     * codecs). Fabric registers immediately; NeoForge freezes those registries outside its
+     * registration event, so its entrypoint queues the entry and registers it there instead.
+     */
+    default <T> void registerBuiltIn(Registry<T> registry, Identifier id, T value) {
+        Registry.register(registry, id, value);
+    }
+
+    /**
+     * Declares one of TerraForged's datapack registries, whose entries are loaded from data packs with
+     * {@code codec}. Each loader has its own API for this, so the default does nothing.
+     */
+    default <T> void registerDataRegistry(ResourceKey<Registry<T>> key, Codec<T> codec) {
+    }
+
+    /**
+     * A biome's downfall, which vanilla no longer exposes through any accessor. Fabric reads the climate
+     * record through its access widener; NeoForge cannot, because it rewrites every access to that field
+     * into its own getter (so biome modifiers apply) and refuses to load if the field is made public.
+     */
+    default float getDownfall(Biome biome) {
+        throw new UnsupportedOperationException("No platform set up to read biome downfall");
     }
 
     default RegistryManager getRegistryManager() {

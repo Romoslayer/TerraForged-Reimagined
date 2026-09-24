@@ -1,0 +1,33 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "MIT"
+issueTrackerURL = "https://github.com/Romoslayer/TerraForged-Reimagined/issues"
+
+[[mods]]
+modId = "terraforged"
+version = "${version}"
+displayName = "${mod_name}"
+authors = "Romoslayer"
+credits = "dags and Won-Ton (original TerraForged)"
+displayURL = "https://www.curseforge.com/minecraft/mc-mods/terraforged-reimagined"
+logoFile = "terraforged.png"
+description = '''
+Replaces the vanilla overworld with large-scale, erosion-shaped landscapes. An unofficial port of TerraForged by dags and Won-Ton.
+'''
+
+[[mixins]]
+config = "terraforged.mixins.json"
+
+[[dependencies.terraforged]]
+modId = "neoforge"
+type = "required"
+versionRange = "[26,)"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.terraforged]]
+modId = "minecraft"
+type = "required"
+versionRange = "${mc_version_range}"
+ordering = "NONE"
+side = "BOTH"

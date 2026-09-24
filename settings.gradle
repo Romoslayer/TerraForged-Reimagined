@@ -7,3 +7,7 @@ pluginManagement {
 }
 
 rootProject.name = 'TerraForged-Fabric'
+
+// The NeoForge build compiles the same sources as the Fabric build (the root project); see
+// neoforge/build.gradle.
+include 'neoforge'

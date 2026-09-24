@@ -1,0 +1,109 @@
+plugins {
+    id 'java'
+    id 'net.neoforged.moddev' version "${moddev_version}"
+}
+
+// The NeoForge build. Every class and asset comes from the Fabric project's source tree (the root),
+// minus its Fabric-only entrypoints and metadata; this project adds the NeoForge entrypoint, its
+// neoforge.mods.toml, and an access transformer mirroring the root's access widener.
+
+version = mod_version
+group = maven_group
+base.archivesName = "${archives_name}-${mc_version}-neoforge"
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(java_version.toInteger())
+
+neoForge {
+    version = neoforge_version
+
+    runs {
+        configureEach {
+            gameDirectory = file('run')
+        }
+        client {
+            client()
+        }
+        server {
+            server()
+            programArguments = ['--nogui']
+        }
+    }
+
+    mods {
+        terraforged {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+// Forward the console to the dev server, as Loom does, so scripted runs (tools/neoforge_test.sh) can
+// type commands into it -- ModDevGradle leaves the server's stdin unconnected, so "stop" never arrives.
+tasks.matching { it.name == 'runServer' }.configureEach {
+    standardInput = System.in
+}
+
+sourceSets.main {
+    java.srcDir rootProject.file('src/main/java')
+    java.exclude 'com/terraforged/mod/platform/fabric/**'
+    // Excluded from the Fabric build too: upstream's datagen path, not ported (see the root build).
+    java.exclude 'com/terraforged/mod/data/gen/**'
+    java.exclude 'com/terraforged/mod/util/TagLoader.java'
+
+    resources.srcDir rootProject.file('src/main/resources')
+    resources.exclude 'fabric.mod.json'
+    resources.exclude 'terraforged.accesswidener'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release.set(java_version.toInteger())
+}
+
+processResources {
+    def props = [version: project.version, mod_name: mod_name, mc_version_range: neoforge_mc_version_range]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand props
+    }
+}
+
+jar {
+    from(rootProject.files('LICENSE', 'LICENSE-Noise2D', 'LICENSE-FastNoise'))
+}
+
+// Installs the built jar into a NeoForge instance; the NeoForge counterpart of the root project's
+// deployToInstance, keyed terraforged.deploy.neoforge.<mc_version> in ~/.gradle/gradle.properties.
+tasks.register('deployToInstance') {
+    group = 'build'
+    description = "Copies the built jar into the mods folder given by terraforged.deploy.neoforge.${mc_version}."
+
+    def builtJar = tasks.named('jar').flatMap { it.archiveFile }
+    def targetDir = providers.gradleProperty("terraforged.deploy.neoforge.${mc_version}")
+
+    onlyIf { targetDir.isPresent() && !targetDir.get().trim().isEmpty() }
+
+    doLast {
+        def target = file(targetDir.get().trim())
+        if (!target.isDirectory()) {
+            logger.lifecycle("deployToInstance: skipped -- no such directory: ${target}")
+            return
+        }
+        def source = builtJar.get().asFile
+        target.listFiles()?.each { existing ->
+            if (existing.isFile() && existing.name.toLowerCase().startsWith('terraforged-')
+                    && existing.name.toLowerCase().endsWith('.jar')) {
+                if (!existing.delete()) {
+                    throw new GradleException("deployToInstance: could not remove ${existing.name}."
+                            + " Minecraft is probably running and holding the file -- close it and build again.")
+                }
+            }
+        }
+        def dest = new File(target, source.name)
+        java.nio.file.Files.copy(source.toPath(), dest.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        logger.lifecycle("deployToInstance: installed ${dest}")
+    }
+}
+
+tasks.named('build') { finalizedBy('deployToInstance') }
