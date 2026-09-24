@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021 TerraForged
+ * Copyright (c) 2026 Romoslayer
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,32 +22,17 @@
  * SOFTWARE.
  */
 
-package com.terraforged.mod.lifecycle;
+package com.terraforged.mod.platform.neoforge.client;
 
-import net.minecraft.core.registries.BuiltInRegistries;
-import com.terraforged.mod.CommonAPI;
-import com.terraforged.mod.Environment;
 import com.terraforged.mod.TerraForged;
-import com.terraforged.mod.worldgen.Generator;
-import com.terraforged.mod.worldgen.biome.Source;
-import com.terraforged.mod.worldgen.datapack.DataPackExporter;
+import com.terraforged.mod.lifecycle.ClientSetup;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.common.Mod;
 
-public class CommonSetup extends Stage {
-    public static final CommonSetup STAGE = new CommonSetup();
-
-    CommonSetup() {}
-
-    @Override
-    protected void doInit() {
-        TerraForged.LOG.info("Registering world-gen core codecs");
-        var api = CommonAPI.get();
-        api.registerBuiltIn(BuiltInRegistries.BIOME_SOURCE, TerraForged.location("climate"), Source.CODEC);
-        api.registerBuiltIn(BuiltInRegistries.CHUNK_GENERATOR, TerraForged.location("generator"), Generator.CODEC);
-
-//        Registry.register(BuiltInRegistries.CHUNK_GENERATOR, TerraForged.location("profiler"), GeneratorProfiler.CODEC);
-
-        if (!Environment.DATA_GEN) {
-            DataPackExporter.extractDefaultPack();
-        }
+/** The NeoForge client entrypoint, the counterpart of the Fabric build's {@code TFClient}. */
+@Mod(value = TerraForged.MODID, dist = Dist.CLIENT)
+public class TFNeoForgeClient {
+    public TFNeoForgeClient() {
+        ClientSetup.STAGE.run();
     }
 }

@@ -29,7 +29,6 @@ import com.terraforged.mod.CommonAPI;
 import com.terraforged.mod.TerraForged;
 import com.terraforged.mod.registry.key.RegistryKey;
 import com.terraforged.mod.worldgen.asset.*;
-import net.fabricmc.fabric.api.event.registry.DynamicRegistries;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.world.level.biome.Biome;
 
@@ -38,8 +37,9 @@ import net.minecraft.world.level.biome.Biome;
  *
  * <p>Each one is declared twice, for two different jobs. {@code RegistryManager#create} builds the
  * in-memory registry holding the built-in defaults, which is what the data generator writes out.
- * {@link DynamicRegistries#register} tells Minecraft the registry exists as a datapack registry, so
- * it is populated from datapack JSON at world load and shows up in the world's registries.
+ * {@link CommonAPI#registerDataRegistry} tells Minecraft the registry exists as a datapack registry
+ * (Fabric API's {@code DynamicRegistries}, NeoForge's {@code DataPackRegistryEvent}), so it is populated
+ * from datapack JSON at world load and shows up in the world's registries.
  *
  * <p>Upstream had no equivalent of the second step. Custom datapack registries were not a thing a
  * mod could declare in 1.19, so it reflected its content into the registry map by hand as the world
@@ -71,6 +71,6 @@ public class ModSetup extends Stage {
                                    RegistryKey<T> key,
                                    Codec<T> codec) {
         manager.create(key, codec);
-        DynamicRegistries.register(key.get(), codec);
+        CommonAPI.get().registerDataRegistry(key.get(), codec);
     }
 }

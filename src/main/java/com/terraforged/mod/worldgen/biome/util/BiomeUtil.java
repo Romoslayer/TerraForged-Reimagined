@@ -27,6 +27,7 @@ package com.terraforged.mod.worldgen.biome.util;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import com.terraforged.engine.world.biome.type.BiomeType;
+import com.terraforged.mod.CommonAPI;
 import com.terraforged.mod.TerraForged;
 import com.terraforged.mod.data.ModTags;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -270,11 +271,11 @@ public class BiomeUtil {
     }
 
     /**
-     * Read straight off the climate record, which the access widener opens up, because there is no
-     * accessor for it any more. Approximating it from tags would change which biomes land in which
-     * climate, so the raw value is worth the access widener.
+     * Read straight off the climate record, because there is no accessor for it any more; how each
+     * loader reaches the record is in {@link CommonAPI#getDownfall}. Approximating it from tags would
+     * change which biomes land in which climate, so the raw value is worth the platform hook.
      */
     private static float getDownfall(Biome biome) {
-        return biome.climateSettings.downfall();
+        return CommonAPI.get().getDownfall(biome);
     }
 }

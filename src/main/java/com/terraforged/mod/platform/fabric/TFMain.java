@@ -25,21 +25,37 @@
 package com.terraforged.mod.platform.fabric;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.serialization.Codec;
 import com.terraforged.mod.TerraForged;
 import com.terraforged.mod.command.TFCommands;
 import com.terraforged.mod.lifecycle.CommonSetup;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.registry.DynamicRegistries;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.commands.CommandBuildContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.biome.Biome;
 
 import java.nio.file.Path;
 
 public class TFMain extends TerraForged implements ModInitializer, CommandRegistrationCallback {
     public TFMain() {
         super(TFMain::getRootPath);
+    }
+
+    @Override
+    public <T> void registerDataRegistry(ResourceKey<Registry<T>> key, Codec<T> codec) {
+        DynamicRegistries.register(key, codec);
+    }
+
+    /** The climate record is opened by the access widener (terraforged.accesswidener). */
+    @Override
+    public float getDownfall(Biome biome) {
+        return biome.climateSettings.downfall();
     }
 
     @Override
