@@ -73,6 +73,8 @@ public class BiomeGenerator {
 
         featureDecorator.decorate(chunk, region, structures, terrain, generator);
         noiseCaveGenerator.decorate((int) seed, chunk, region, generator);
+        // The passes below are TerraForged's own, so a warning from them must not name the last feature.
+        region.setCurrentlyGenerating(null);
 
         Surface.smoothWater(chunk, region, terrain.join());
         // Miscellaneous > Natural Snow Decorator. On by default, as it always ran before it was a setting.

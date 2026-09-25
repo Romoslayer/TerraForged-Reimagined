@@ -131,6 +131,7 @@ public class PositionSampler {
 
         for (var other : features) {
             random.setFeatureSeed(seed, offset, VegetationFeatures.STAGE);
+            level.setCurrentlyGenerating(VanillaDecorator.describe(level, other));
             if (new FeaturePlacer(level, generator).placeWithBiomeCheck(other, random, origin)) {
                 offset++;
             }
@@ -221,6 +222,7 @@ public class PositionSampler {
 
         for (var feature : context.features.trees()) {
             context.random.setFeatureSeed(seed, offset, VegetationFeatures.STAGE);
+            context.region.setCurrentlyGenerating(VanillaDecorator.describe(context.region, feature));
 
             if (new FeaturePlacer(context.region, context.generator).placeWithBiomeCheck(feature, context.random, context.pos)) {
                 offset++;
@@ -229,6 +231,7 @@ public class PositionSampler {
 
         for (var feature : context.features.grass()) {
             context.random.setFeatureSeed(seed, offset, VegetationFeatures.STAGE);
+            context.region.setCurrentlyGenerating(VanillaDecorator.describe(context.region, feature));
 
             if (new FeaturePlacer(context.region, context.generator).placeWithBiomeCheck(feature, context.random, context.pos)) {
                 offset++;
@@ -255,6 +258,7 @@ public class PositionSampler {
 
         for (var feature : context.features.trees()) {
             context.random.setFeatureSeed(seed, offset, VegetationFeatures.STAGE);
+            context.region.setCurrentlyGenerating(VanillaDecorator.describe(context.region, feature));
 
             if (new FeaturePlacer(context.region, context.generator).placeWithBiomeCheck(feature, context.random, context.pos)) {
                 offset++;
@@ -280,6 +284,7 @@ public class PositionSampler {
         for (int i = 0; i < passes; i++) {
             for (var feature : context.features.grass()) {
                 random.setFeatureSeed(seed, offset + i, VegetationFeatures.STAGE);
+                region.setCurrentlyGenerating(VanillaDecorator.describe(region, feature));
                 if (new FeaturePlacer(region, generator).placeWithBiomeCheck(feature, random, pos)) {
                     offset++;
                 }
