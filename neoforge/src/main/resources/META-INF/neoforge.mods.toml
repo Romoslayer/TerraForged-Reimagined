@@ -10,7 +10,9 @@ displayName = "${mod_name}"
 authors = "Romoslayer"
 credits = "dags and Won-Ton (original TerraForged)"
 displayURL = "https://www.curseforge.com/minecraft/mc-mods/terraforged-reimagined"
-logoFile = "terraforged.png"
+# logoFile is deprecated: bannerFile takes the wide banner, iconFile a square icon (the datapack's).
+bannerFile = "terraforged.png"
+iconFile = "default/pack.png"
 description = '''
 Replaces the vanilla overworld with large-scale, erosion-shaped landscapes. An unofficial port of TerraForged by dags and Won-Ton.
 '''
