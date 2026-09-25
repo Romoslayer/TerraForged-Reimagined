@@ -26,22 +26,14 @@ package com.terraforged.mod.worldgen.cave;
 
 import com.terraforged.mod.worldgen.Generator;
 import com.terraforged.mod.worldgen.asset.NoiseCave;
-import com.terraforged.mod.worldgen.biome.util.BiomeList;
 import com.terraforged.mod.worldgen.terrain.TerrainData;
 import com.terraforged.noise.Module;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.biome.Biome;
 
-import java.util.IdentityHashMap;
-import java.util.Map;
-
 public class CarverChunk {
     private Holder<Biome> cached;
     private int cachedX, cachedZ;
-
-    private int biomeListIndex = -1;
-    private final BiomeList[] biomeLists;
-    private final Map<NoiseCave, BiomeList> biomes = new IdentityHashMap<>();
 
     public Module mask;
     public Module modifier;
@@ -50,22 +42,9 @@ public class CarverChunk {
     /** Structure pieces that must not be undermined; see {@code StructureSpace#protectionBoxes}. */
     public java.util.List<net.minecraft.world.level.levelgen.structure.BoundingBox> protection = java.util.List.of();
 
-    public CarverChunk(int size) {
-        biomeLists = new BiomeList[size];
-        for (int i = 0; i < biomeLists.length; i++) {
-            biomeLists[i] = new BiomeList();
-        }
-    }
-
     public CarverChunk reset() {
         cached = null;
-        biomes.clear();
-        biomeListIndex = -1;
         return this;
-    }
-
-    public BiomeList getBiomes(NoiseCave config) {
-        return biomes.get(config);
     }
 
     public Holder<Biome> getBiome(int x, int z, NoiseCave config, Generator generator) {
@@ -75,7 +54,6 @@ public class CarverChunk {
             cached = generator.getBiomeSource().getUnderGroundBiome(config.getSeed(), x, z, config.getType());
             cachedX = biomeX;
             cachedZ = biomeZ;
-            biomes.computeIfAbsent(config, c -> nextList()).add(cached);
         }
         return cached;
     }
@@ -84,14 +62,5 @@ public class CarverChunk {
         float noise = mask.getValue(seed, x, z);
         float river = terrainData.getRiver().get(x, z);
         return 1f - noise * river;
-    }
-
-    private BiomeList nextList() {
-        int i = biomeListIndex + 1;
-        if (i < biomeLists.length) {
-            biomeListIndex = i;
-            return biomeLists[i].reset();
-        }
-        return new BiomeList();
     }
 }

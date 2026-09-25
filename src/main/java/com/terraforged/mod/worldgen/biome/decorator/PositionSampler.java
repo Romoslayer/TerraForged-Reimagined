@@ -27,6 +27,7 @@ package com.terraforged.mod.worldgen.biome.decorator;
 import com.terraforged.mod.util.MathUtil;
 import com.terraforged.mod.worldgen.Generator;
 import com.terraforged.mod.worldgen.asset.VegetationConfig;
+import com.terraforged.mod.worldgen.biome.util.BiomeList;
 import com.terraforged.mod.worldgen.biome.vegetation.VegetationFeatures;
 import com.terraforged.mod.worldgen.terrain.TerrainData;
 import com.terraforged.noise.util.NoiseUtil;
@@ -55,12 +56,14 @@ public class PositionSampler {
                                        CompletableFuture<TerrainData> terrain,
                                        FeatureDecorator decorator) {
 
-        int offset = placeTreesAndGrass(seed, chunk, level, terrain, generator, random, decorator);
+        var context = SamplerContext.get();
+        int offset = placeTreesAndGrass(seed, context, chunk, level, terrain, generator, random, decorator);
 
-        placeOther(seed, offset, origin, biome, chunk, level, generator, random, decorator);
+        placeOther(seed, offset, origin, biome, context.biomeList, chunk, level, generator, random, decorator);
     }
 
     public static int placeTreesAndGrass(long seed,
+                                         SamplerContext context,
                                          ChunkAccess chunk,
                                          WorldGenLevel level,
                                          CompletableFuture<TerrainData> terrain,
@@ -68,7 +71,6 @@ public class PositionSampler {
                                          WorldgenRandom random,
                                          FeatureDecorator decorator) {
 
-        var context = SamplerContext.get();
         context.chunk = chunk;
         context.region = level;
         context.random = random;
@@ -113,11 +115,19 @@ public class PositionSampler {
      *
      * <p>Features are deduplicated across biomes, because vanilla runs each placed feature at most once
      * per chunk; without that, two biomes sharing {@code patch_pumpkin} would double its output.
+     *
+     * <p>A cave biome's trees and grass run here as well, since the column sampler only ever sees surface
+     * biomes. Lush caves' {@code rooted_azalea_tree} is the one vanilla case, though it needs the surface
+     * within 100 blocks of the cave, so under TerraForged's terrain it rarely finds one. Skipped are those a
+     * surface biome in the chunk declares ({@code trees_plains} in deep dark): the sampler places those,
+     * and a second, vanilla copy could only land on the surface. They are appended last, so every feature
+     * above keeps its seed.
      */
     public static void placeOther(long seed,
                                   int offset,
                                   BlockPos origin,
                                   Holder<Biome> biome,
+                                  BiomeList surfaceBiomes,
                                   ChunkAccess chunk,
                                   WorldGenLevel level,
                                   Generator generator,
@@ -125,8 +135,12 @@ public class PositionSampler {
                                   FeatureDecorator decorator) {
 
         var features = new java.util.LinkedHashSet<net.minecraft.world.level.levelgen.placement.PlacedFeature>();
+        var chunkBiomes = chunkBiomes(chunk);
         collectOther(biome, decorator, features);
-        for (var other : chunkBiomes(chunk)) collectOther(other, decorator, features);
+        for (var other : chunkBiomes) collectOther(other, decorator, features);
+        for (var other : chunkBiomes) {
+            if (!surfaceBiomes.contains(other)) collectCaveTreesAndGrass(other, surfaceBiomes, decorator, features);
+        }
 
         for (var other : features) {
             random.setFeatureSeed(seed, offset, VegetationFeatures.STAGE);
@@ -142,6 +156,26 @@ public class PositionSampler {
         var vegetation = decorator.getVegetationManager().getVegetation(biome);
         if (vegetation.features == VegetationFeatures.NONE) return;
         for (var other : vegetation.features.other()) out.add(other);
+    }
+
+    private static void collectCaveTreesAndGrass(Holder<Biome> biome, BiomeList surfaceBiomes, FeatureDecorator decorator,
+                                                 java.util.Set<net.minecraft.world.level.levelgen.placement.PlacedFeature> out) {
+        var vegetation = decorator.getVegetationManager().getVegetation(biome);
+        // Only unsampled biomes: a sampled biome's trees are stored stripped of their count and biome filter.
+        if (vegetation.config != VegetationConfig.NONE || vegetation.features == VegetationFeatures.NONE) return;
+        for (var feature : vegetation.features.trees()) {
+            if (!declaredBy(surfaceBiomes, feature)) out.add(feature);
+        }
+        for (var feature : vegetation.features.grass()) {
+            if (!declaredBy(surfaceBiomes, feature)) out.add(feature);
+        }
+    }
+
+    private static boolean declaredBy(BiomeList biomes, net.minecraft.world.level.levelgen.placement.PlacedFeature feature) {
+        for (int i = 0; i < biomes.size(); i++) {
+            if (biomes.get(i).value().getGenerationSettings().hasFeature(feature)) return true;
+        }
+        return false;
     }
 
     /**
