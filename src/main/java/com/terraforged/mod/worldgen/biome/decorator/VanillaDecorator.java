@@ -41,6 +41,7 @@ import net.minecraft.world.level.levelgen.structure.BoundingBox;
 import net.minecraft.world.level.levelgen.structure.Structure;
 
 import java.util.*;
+import java.util.function.Supplier;
 
 public class VanillaDecorator {
     public static void decorate(long seed,
@@ -140,6 +141,7 @@ public class VanillaDecorator {
 
                 if (isDisabled(holder, misc)) continue;
 
+                level.setCurrentlyGenerating(describe(holder));
                 holder.value().placeWithBiomeCheck(level, generator, random, origin);
             }
         }
@@ -161,6 +163,7 @@ public class VanillaDecorator {
             random.setFeatureSeed(seed, structureIndex, stage);
 
             var structure = structures.get(structureIndex);
+            level.setCurrentlyGenerating(describe(structure));
             var starts = structureManager.startsForStructure(sectionPos, structure.value());
             for (int startIndex = 0; startIndex < starts.size(); startIndex++) {
                 var start = starts.get(startIndex);
@@ -188,8 +191,25 @@ public class VanillaDecorator {
             var holder = features.get(i);
             if (isDisabled(holder, misc)) continue;
 
+            level.setCurrentlyGenerating(describe(holder));
             holder.value().placeWithBiomeCheck(level, generator, random, origin);
         }
+    }
+
+    /**
+     * Names what is being placed, for the "unsafe terrain read" and "setBlock in a far chunk" warnings
+     * {@code WorldGenRegion} logs. Vanilla's {@code applyBiomeDecoration} sets this before every feature
+     * and structure; without it a vanilla feature run from here is logged with no name, which reads as
+     * TerraForged's own code. Only evaluated when a warning fires.
+     */
+    public static Supplier<String> describe(Holder<?> holder) {
+        return () -> holder.unwrapKey().map(Object::toString).orElseGet(() -> holder.value().toString());
+    }
+
+    /** {@link #describe(Holder)} for the bare features the vegetation sampler holds. */
+    public static Supplier<String> describe(WorldGenLevel level, PlacedFeature feature) {
+        return () -> level.registryAccess().lookupOrThrow(Registries.PLACED_FEATURE).getResourceKey(feature)
+                .map(Object::toString).orElseGet(feature::toString);
     }
 
     /** Miscellaneous page switches for vanilla features, matched by placed-feature id. */

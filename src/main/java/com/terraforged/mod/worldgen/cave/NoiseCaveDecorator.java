@@ -27,6 +27,7 @@ package com.terraforged.mod.worldgen.cave;
 import com.terraforged.mod.worldgen.Generator;
 import com.terraforged.mod.worldgen.Seeds;
 import com.terraforged.mod.worldgen.asset.NoiseCave;
+import com.terraforged.mod.worldgen.biome.decorator.VanillaDecorator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.biome.BiomeGenerationSettings;
@@ -70,8 +71,9 @@ public class NoiseCaveDecorator {
             for (int featureIndex = 0; featureIndex < stage.size(); featureIndex++) {
                 random.setFeatureSeed(baseSeed, featureIndex, stageIndex);
 
-                var feature = stage.get(featureIndex).value();
-                feature.placeWithBiomeCheck(region, generator, random, pos);
+                var feature = stage.get(featureIndex);
+                region.setCurrentlyGenerating(VanillaDecorator.describe(feature));
+                feature.value().placeWithBiomeCheck(region, generator, random, pos);
             }
         }
     }
