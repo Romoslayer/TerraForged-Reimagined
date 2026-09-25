@@ -35,8 +35,6 @@ import com.terraforged.engine.util.pos.PosUtil;
 import com.terraforged.engine.world.terrain.Terrain;
 import com.terraforged.engine.world.terrain.TerrainType;
 import com.terraforged.mod.worldgen.GeneratorPreset;
-import com.terraforged.mod.worldgen.Regenerator;
-import com.terraforged.mod.worldgen.Seeds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -46,13 +44,16 @@ import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 public class TFCommands {
+    /**
+     * Upstream also registered {@code /tf export structures}, whose export was commented out while it still
+     * reported success, and {@code /tf regen}, which deleted chunks by pulling holders out of
+     * {@code ChunkMap}'s maps under a live server. Neither is registered.
+     */
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(getLocateTerrainCommand());
-        dispatcher.register(getTFCommand());
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> root(String name) {
@@ -65,43 +66,6 @@ public class TFCommands {
                         .then(Commands.argument("radius", IntegerArgumentType.integer(1))
                                 .executes(c -> locate(c, true)))
                         .executes(c -> locate(c, false)));
-    }
-
-    private static LiteralArgumentBuilder<CommandSourceStack> getTFCommand() {
-        return root("tf")
-                .then(Commands.literal("export")
-                        .then(Commands.literal("structures")
-                                .executes(TFCommands::export)))
-                .then(Commands.literal("regen")
-                        .then(net.minecraft.commands.Commands.argument("radius", IntegerArgumentType.integer(1))
-                                .executes(TFCommands::regen)));
-    }
-
-    private static int regen(CommandContext<CommandSourceStack> context) {
-        try {
-            int radius = IntegerArgumentType.getInteger(context, "radius");
-            var pos = context.getSource().getPosition();
-            var chunk = new ChunkPos(((int) pos.x) >> 4, ((int) pos.z) >> 4);
-            Regenerator.regenerateChunks(chunk, radius, context.getSource().getLevel(), context.getSource());
-
-            return Command.SINGLE_SUCCESS;
-        } catch (Throwable t) {
-            t.printStackTrace();
-            return Command.SINGLE_SUCCESS;
-        }
-    }
-
-    private static int export(CommandContext<CommandSourceStack> context) {
-        var access = context.getSource().registryAccess();
-//        var structures = context.getSource().getLevel().getChunkSource().getGenerator().getSettings();
-//        DataGen.exportStructureConfigs(DataPackExporter.DEFAULT_PACK_DIR, structures, access);
-
-        var result = Component.literal("Exported structure settings")
-                .withStyle(s -> s.withColor(ChatFormatting.GREEN));
-
-        context.getSource().sendSuccess(() -> result, false);
-
-        return Command.SINGLE_SUCCESS;
     }
 
     private static int locate(CommandContext<CommandSourceStack> context, boolean withRadius) throws CommandSyntaxException {
