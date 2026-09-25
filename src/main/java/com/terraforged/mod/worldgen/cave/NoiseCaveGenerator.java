@@ -31,13 +31,9 @@ import com.terraforged.mod.worldgen.asset.NoiseCave;
 import com.terraforged.noise.Module;
 import com.terraforged.noise.Source;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.chunk.ChunkAccess;
 
 import java.util.Arrays;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class NoiseCaveGenerator {
     protected static final int POOL_SIZE = 32;
@@ -49,7 +45,6 @@ public class NoiseCaveGenerator {
     protected final Module uniqueCaveNoise;
     protected final Module caveBreachNoise;
     protected final ObjectPool<CarverChunk> pool;
-    protected final Map<ChunkPos, CarverChunk> cache = new ConcurrentHashMap<>();
 
     public NoiseCaveGenerator(HolderLookup.Provider access) {
         this.uniqueCaveNoise = createUniqueNoise(500, DENSITY);
@@ -66,7 +61,7 @@ public class NoiseCaveGenerator {
     }
 
     public void carve(int seed, ChunkAccess chunk, Generator generator, net.minecraft.world.level.StructureManager structures) {
-        var carver = getPreCarveChunk(chunk);
+        var carver = pool.take().reset();
         carver.terrainData = generator.getChunkData(seed, chunk.getPos());
         carver.protection = StructureSpace.protectionBoxes(chunk, structures);
         carver.mask = caveBreachNoise;
@@ -74,43 +69,10 @@ public class NoiseCaveGenerator {
         for (var config : caves) {
             carver.modifier = getModifier(config);
 
-            NoiseCaveCarver.carve(seed, chunk, carver, generator, config, true);
-        }
-    }
-
-    public void decorate(int seed, ChunkAccess chunk, WorldGenLevel region, Generator generator) {
-        var carver = getPostCarveChunk(seed, chunk, generator);
-
-        for (var config : caves) {
-            NoiseCaveDecorator.decorate(chunk, carver, region, generator, config);
+            NoiseCaveCarver.carve(seed, chunk, carver, generator, config);
         }
 
         pool.restore(carver);
-    }
-
-    private CarverChunk getPreCarveChunk(ChunkAccess chunk) {
-        return cache.computeIfAbsent(chunk.getPos(), p -> pool.take().reset());
-    }
-
-    private CarverChunk getPostCarveChunk(int seed, ChunkAccess chunk, Generator generator) {
-        var carver = cache.remove(chunk.getPos());
-        if (carver != null) return carver;
-
-        // Chunk may have been saved in an incomplete state so need run the carve step
-        // again to populate the CarverChunk (flag set false to skip setting blocks).
-
-        carver = pool.take().reset();
-
-        carver.mask = caveBreachNoise;
-        carver.terrainData = generator.getChunkData(seed, chunk.getPos());
-
-        for (var config : caves) {
-            carver.modifier = getModifier(config);
-
-            NoiseCaveCarver.carve(seed, chunk, carver, generator, config, false);
-        }
-
-        return carver;
     }
 
     private Module getModifier(NoiseCave cave) {
@@ -121,7 +83,7 @@ public class NoiseCaveGenerator {
     }
 
     private CarverChunk createCarverChunk() {
-        return new CarverChunk(caves.length);
+        return new CarverChunk();
     }
 
     private static Module createUniqueNoise(int scale, float density) {

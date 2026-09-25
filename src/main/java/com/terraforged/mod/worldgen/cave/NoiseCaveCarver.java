@@ -47,8 +47,7 @@ public class NoiseCaveCarver {
                              ChunkAccess chunk,
                              CarverChunk carver,
                              Generator generator,
-                             NoiseCave config,
-                             boolean carve) {
+                             NoiseCave config) {
         var pos = new BlockPos.MutableBlockPos();
 
         int minY = generator.getMinY();
@@ -86,9 +85,7 @@ public class NoiseCaveCarver {
 
             var biome = carver.getBiome(x, z, config, generator);
 
-            if (carve) {
-                carve(chunk, biome, dx, dz, bottom, top, surface, pos, carver.protection, x, z);
-            }
+            carve(chunk, biome, dx, dz, bottom, top, surface, pos, carver.protection, x, z);
         }
     }
 

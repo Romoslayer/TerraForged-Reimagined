@@ -17,11 +17,31 @@ with your seed, the coordinates, and your mod list.
 - **Fabric:** Fabric Loader 0.19.5 or newer, and Fabric API
 - **NeoForge:** NeoForge for 26.3
 
+Both loaders generate the same world. For Minecraft 26.2, see the `main` branch; CurseForge has files
+for both versions.
+
 ## Usage
 
 Choose the **TerraForged** world type on the create-world screen. **Customize** opens the settings
 screen, with pages for world, climate, terrain, rivers, filters, structures and miscellaneous options,
 a preview map, and built-in and user presets. Settings are saved with the world.
+
+## Dedicated servers
+
+The world type comes from a datapack the mod ships, and on a client the create-world screen installs
+it. A dedicated server has no such screen, so the datapack has to be in the world before the world is
+first generated. The simplest way is to create the world in single-player and copy its folder to the
+server: it already carries the datapack. To create it on the server instead:
+
+1. Start the server once with the mod installed, then stop it. The mod extracts its datapack to
+   `config/terraforged/pack-v0.2`.
+2. Delete the world folder that start created (`world`, unless `level-name` says otherwise).
+3. Copy `config/terraforged/pack-v0.2` to `world/datapacks/terraforged`.
+4. In `server.properties`, set `level-type=terraforged\:normal`.
+5. Start the server.
+
+Without the datapack the server logs `Failed to parse level-type terraforged:normal` and generates a
+vanilla world.
 
 ## Compatibility
 

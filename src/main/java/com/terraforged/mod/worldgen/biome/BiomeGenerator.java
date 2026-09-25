@@ -71,8 +71,11 @@ public class BiomeGenerator {
         int seed = Seeds.get(region.getSeed());
         var terrain = generator.getChunkDataAsync(seed, chunk.getPos());
 
+        // This decorates the caves' biomes too: the carver writes each into the chunk's biome storage, and
+        // the decorator runs every biome stored in the chunk. Upstream also ran each cave's biome features
+        // again from the carver; here that placed a second set of any feature whose seed differed, which
+        // raised ore by ~60% and doubled dripstone.
         featureDecorator.decorate(chunk, region, structures, terrain, generator);
-        noiseCaveGenerator.decorate((int) seed, chunk, region, generator);
         // The passes below are TerraForged's own, so a warning from them must not name the last feature.
         region.setCurrentlyGenerating(null);
 
