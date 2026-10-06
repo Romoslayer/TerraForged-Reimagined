@@ -1,8 +1,9 @@
 # TerraForged Reimagined
 
 An unofficial port of [TerraForged](https://www.curseforge.com/minecraft/mc-mods/terraforged) to
-**Minecraft 26.2**, for **Fabric** and **NeoForge**. It replaces the overworld generator with large-scale,
-erosion-shaped landscapes: continents, mountain ranges, river networks and climate-driven biome placement.
+**Minecraft 26.2**, for **Fabric**, **NeoForge** and **Forge**. It replaces the overworld generator with
+large-scale, erosion-shaped landscapes: continents, mountain ranges, river networks and climate-driven
+biome placement.
 
 ## Original mod and credit
 
@@ -13,7 +14,7 @@ author) and **Won-Ton** (won_ton_ on CurseForge, contributor).
 - Original source code: [TerraForged/TerraForged](https://github.com/TerraForged/TerraForged)
 
 TerraForged's terrain, erosion, river and climate systems are their design and their code. This project
-carries them to current Minecraft versions and to Fabric and NeoForge. The original is no longer
+carries them to current Minecraft versions and to Fabric, NeoForge and Forge. The original is no longer
 updated; its last release is for Minecraft 1.18.2 on Forge. This port is unofficial and is not affiliated
 with or endorsed by the TerraForged team, so please report problems with it here rather than to them.
 
@@ -28,8 +29,9 @@ with your seed, the coordinates, and your mod list.
 - Minecraft 26.2 and Java 25
 - **Fabric:** Fabric Loader 0.19.3 or newer, and Fabric API
 - **NeoForge:** NeoForge for 26.2
+- **Forge:** Forge 65 (Minecraft Forge for 26.2)
 
-Both loaders generate the same world. For Minecraft 26.3, see the `26.3` branch; CurseForge has files
+All three loaders generate the same world. For Minecraft 26.3, see the `26.3` branch; CurseForge has files
 for both versions.
 
 ## Usage
@@ -72,7 +74,7 @@ Minecraft 1.19 on Forge). The last TerraForged release on CurseForge is 0.3.1-AL
 1.18.2.
 
 - **Minecraft versions and loaders.** Runs on Minecraft 26.2 (this branch) and 26.3 (the `26.3` branch),
-  with Fabric or NeoForge. The original supports Forge only, up to Minecraft 1.18.2.
+  with Fabric, NeoForge or Forge. The original supports Forge only, up to Minecraft 1.18.2.
 - **Rebuilt terrain engine.** The 0.3.x code depended on a library whose source and published builds
   no longer exist. It was rebuilt from a surviving older fork and from the code that calls it. As a
   result, mountains have no valley carving, and erosion droplets are placed differently, so fine erosion
@@ -98,10 +100,11 @@ Minecraft 1.19 on Forge). The last TerraForged release on CurseForge is 0.3.1-AL
 ./gradlew build
 ```
 
-This builds both loaders from the same sources: the Fabric jar in `build/libs/` and the NeoForge jar in
-`neoforge/build/libs/`. To have each build copied into a Minecraft instance, set
-`terraforged.deploy.fabric.26.2` or `terraforged.deploy.neoforge.26.2` to that instance's `mods` folder
-in your user-level `~/.gradle/gradle.properties`.
+This builds all three loaders from the same sources: the Fabric jar in `build/libs/`, the NeoForge jar in
+`neoforge/build/libs/` and the Forge jar in `forge/build/libs/`. To have each build copied into a
+Minecraft instance, set `terraforged.deploy.fabric.26.2`, `terraforged.deploy.neoforge.26.2` or
+`terraforged.deploy.forge.26.2` to that instance's `mods` folder in your user-level
+`~/.gradle/gradle.properties`.
 
 ## Credits
 

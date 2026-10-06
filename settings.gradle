@@ -6,8 +6,15 @@ pluginManagement {
     }
 }
 
+plugins {
+    // Lets Gradle fetch the JDK ForgeGradle's run tasks ask for (their launcher wants Java 8), as
+    // Forge's MDK does.
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
 rootProject.name = 'TerraForged-Fabric'
 
-// The NeoForge build compiles the same sources as the Fabric build (the root project); see
-// neoforge/build.gradle.
+// The NeoForge and Forge builds compile the same sources as the Fabric build (the root project); see
+// neoforge/build.gradle and forge/build.gradle.
 include 'neoforge'
+include 'forge'

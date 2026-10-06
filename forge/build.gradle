@@ -1,0 +1,123 @@
+plugins {
+    id 'java'
+    id 'net.minecraftforge.gradle' version "${forgegradle_version}"
+}
+
+// The Forge build. Like neoforge/, every class and asset comes from the Fabric project's source tree
+// (the root), minus its Fabric-only entrypoints and metadata; this project adds the Forge entrypoint,
+// its mods.toml, and an access transformer mirroring the root's access widener.
+
+version = mod_version
+group = maven_group
+base.archivesName = "${archives_name}-${mc_version}-forge"
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(java_version.toInteger())
+
+// "26.2-65.1.3" -> "65": the Forge major version, which mods.toml's ranges use.
+def forgeMajor = forge_version.tokenize('-')[1].tokenize('.')[0]
+
+minecraft {
+    // META-INF/accesstransformer.cfg, looked up in the resources.
+    accessTransformer = true
+
+    runs {
+        configureEach {
+            workingDir = layout.projectDirectory.dir('run')
+            // Dev runs load classes from folders, so Mixin cannot read the jar manifest.
+            args '--mixin.config=terraforged.mixins.json'
+        }
+
+        register('client')
+
+        register('server') {
+            args '--nogui'
+        }
+    }
+}
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
+}
+
+// Forward the console to the dev server, as Loom does, so scripted runs can type commands into it.
+tasks.matching { it.name == 'runServer' }.configureEach {
+    standardInput = System.in
+}
+
+sourceSets.main {
+    java.srcDir rootProject.file('src/main/java')
+    java.exclude 'com/terraforged/mod/platform/fabric/**'
+    // Excluded from the Fabric build too: upstream's datagen path, not ported (see the root build).
+    java.exclude 'com/terraforged/mod/data/gen/**'
+    java.exclude 'com/terraforged/mod/util/TagLoader.java'
+
+    resources.srcDir rootProject.file('src/main/resources')
+    resources.exclude 'fabric.mod.json'
+    resources.exclude 'terraforged.accesswidener'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release.set(java_version.toInteger())
+}
+
+processResources {
+    def props = [version: project.version, mod_name: mod_name, mc_version_range: forge_mc_version_range,
+                 forge_major: forgeMajor]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+
+    filesMatching('META-INF/mods.toml') {
+        expand props
+    }
+}
+
+jar {
+    // Forge finds the mixin config through the manifest.
+    manifest {
+        attributes 'MixinConfigs': 'terraforged.mixins.json'
+    }
+    from(rootProject.files('LICENSE', 'LICENSE-Noise2D', 'LICENSE-FastNoise'))
+}
+
+// Installs the built jar into a Forge instance; the Forge counterpart of the root project's
+// deployToInstance, keyed terraforged.deploy.forge.<mc_version> in ~/.gradle/gradle.properties.
+tasks.register('deployToInstance') {
+    group = 'build'
+    description = "Copies the built jar into the mods folder given by terraforged.deploy.forge.${mc_version}."
+
+    def builtJar = tasks.named('jar').flatMap { it.archiveFile }
+    def targetDir = providers.gradleProperty("terraforged.deploy.forge.${mc_version}")
+
+    onlyIf { targetDir.isPresent() && !targetDir.get().trim().isEmpty() }
+
+    doLast {
+        def target = file(targetDir.get().trim())
+        if (!target.isDirectory()) {
+            logger.lifecycle("deployToInstance: skipped -- no such directory: ${target}")
+            return
+        }
+        def source = builtJar.get().asFile
+        target.listFiles()?.each { existing ->
+            if (existing.isFile() && existing.name.toLowerCase().startsWith('terraforged-')
+                    && existing.name.toLowerCase().endsWith('.jar')) {
+                if (!existing.delete()) {
+                    throw new GradleException("deployToInstance: could not remove ${existing.name}."
+                            + " Minecraft is probably running and holding the file -- close it and build again.")
+                }
+            }
+        }
+        def dest = new File(target, source.name)
+        java.nio.file.Files.copy(source.toPath(), dest.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        logger.lifecycle("deployToInstance: installed ${dest}")
+    }
+}
+
+tasks.named('build') { finalizedBy('deployToInstance') }
