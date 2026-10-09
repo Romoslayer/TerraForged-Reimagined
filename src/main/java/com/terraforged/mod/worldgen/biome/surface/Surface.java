@@ -41,7 +41,13 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 public class Surface {
-    protected static final TagKey<Block> ERODIBLE = BlockTags.DIRT;
+    /**
+     * The soils the erosion decorator strips from steep slopes. Upstream used {@code #minecraft:dirt}, which
+     * held grass, podzol, mycelium, moss and mud as well as dirt. 26.x narrowed that tag to dirt, coarse dirt
+     * and rooted dirt and moved the rest into {@code #minecraft:substrate_overworld}, so with the old tag
+     * grassy slopes were never eroded. {@code substrate_overworld} is the same set the old tag held.
+     */
+    protected static final TagKey<Block> ERODIBLE = BlockTags.SUBSTRATE_OVERWORLD;
 
     public static void apply(TerrainData terrainData, ChunkAccess chunk, ChunkGenerator generator) {
         apply(terrainData, chunk, generator, false);
