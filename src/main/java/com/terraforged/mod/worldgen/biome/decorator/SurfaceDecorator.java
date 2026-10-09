@@ -36,16 +36,15 @@ import net.minecraft.world.level.levelgen.WorldGenerationContext;
 public class SurfaceDecorator {
     public void decorate(ChunkAccess chunk, WorldGenRegion region, Generator generator, RandomState state) {
         var context = new WorldGenerationContext(generator, region);
-        var noiseChunk = NoiseChunkUtil.getNoiseChunk(chunk, state, generator);
+        var noiseChunk = NoiseChunkUtil.getNoiseChunk(chunk, region, generator);
 
         var biomeManager = region.getBiomeManager();
 
         var surface = state.surfaceSystem();
         var surfaceRules = generator.getVanillaGen().getSettings().value().surfaceRule();
-        // The biome registry argument became a Set<Holder<Biome>> of the biomes actually in play, and
-        // moved to the end of the parameter list.
-        surface.buildSurface(state, biomeManager, false, context, chunk, noiseChunk, surfaceRules,
-                generator.getBiomeSource().possibleBiomes());
+        // 1.21.1 takes the whole biome registry (26.x passes the set of biomes in play instead).
+        var biomes = region.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BIOME);
+        surface.buildSurface(state, biomeManager, biomes, false, context, chunk, noiseChunk, surfaceRules);
     }
 
     public void decoratePost(ChunkAccess chunk, WorldGenRegion region, Generator generator) {

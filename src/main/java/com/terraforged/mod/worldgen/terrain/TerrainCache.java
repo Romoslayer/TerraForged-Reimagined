@@ -52,11 +52,11 @@ public class TerrainCache {
     }
 
     protected CacheKey allocPos(int seed, ChunkPos pos) {
-        return keyPool.take().set(seed, pos.x(), pos.z());
+        return keyPool.take().set(seed, pos.x, pos.z);
     }
 
     protected CacheKey lookupPos(int seed, ChunkPos pos) {
-        return localKey.get().set(seed, pos.x(), pos.z());
+        return localKey.get().set(seed, pos.x, pos.z);
     }
 
     public void drop(int seed, ChunkPos pos) {

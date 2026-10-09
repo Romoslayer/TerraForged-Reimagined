@@ -310,7 +310,7 @@ public final class StructureSpace {
     }
 
     private static void setBiome(ChunkAccess chunk, int qx, int y, int qz, Holder<Biome> biome) {
-        if (y < chunk.getMinY() || y > chunk.getMaxY()) return;
+        if (y < chunk.getMinBuildHeight() || y > (chunk.getMaxBuildHeight() - 1)) return;
         var section = chunk.getSection(chunk.getSectionIndex(y));
         @SuppressWarnings("unchecked")
         var container = (PalettedContainer<Holder<Biome>>) section.getBiomes();
@@ -393,7 +393,7 @@ public final class StructureSpace {
         var pos = new BlockPos.MutableBlockPos();
         int startX = chunk.getPos().getMinBlockX();
         int startZ = chunk.getPos().getMinBlockZ();
-        int minY = chunk.getMinY();
+        int minY = chunk.getMinBuildHeight();
 
         for (int dz = 0; dz < 16; dz++) {
             for (int dx = 0; dx < 16; dx++) {
@@ -402,7 +402,7 @@ public final class StructureSpace {
 
                 int x = startX + dx;
                 int z = startZ + dz;
-                for (int y = Math.min(space.ceiling[i], chunk.getMaxY()); y > minY; y--) {
+                for (int y = Math.min(space.ceiling[i], (chunk.getMaxBuildHeight() - 1)); y > minY; y--) {
                     if (space.isProtected(i, x, y, z)) continue;
                     if (space.cavernDensity(i, x, y, z, roughness(x, y, z)) >= 0) continue;
 
@@ -411,7 +411,7 @@ public final class StructureSpace {
                     if (!state.is(BlockTags.OVERWORLD_CARVER_REPLACEABLES)) continue;
                     if (!state.getFluidState().isEmpty()) continue;
 
-                    chunk.setBlockState(pos, air, 0);
+                    chunk.setBlockState(pos, air, false);
                 }
             }
         }

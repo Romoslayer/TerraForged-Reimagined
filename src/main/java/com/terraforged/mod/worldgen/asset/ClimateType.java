@@ -31,7 +31,7 @@ import com.mojang.serialization.DynamicOps;
 import com.terraforged.mod.data.codec.LazyCodec;
 import it.unimi.dsi.fastutil.objects.Object2FloatMap;
 import it.unimi.dsi.fastutil.objects.Object2FloatOpenHashMap;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.LinkedHashMap;
 
@@ -42,13 +42,13 @@ public class ClimateType {
         @Override
         public <T> DataResult<Pair<ClimateType, T>> decode(DynamicOps<T> ops, T input) {
             return ops.getMap(input).map(map -> {
-                var weights = new Object2FloatOpenHashMap<Identifier>();
+                var weights = new Object2FloatOpenHashMap<ResourceLocation>();
                 map.entries().forEach(e -> {
                     var name = ops.getStringValue(e.getFirst()).result().orElseThrow();
                     if (name.equals(IGNORE)) return;
 
                     float weight = ops.getNumberValue(e.getSecond()).result().orElseThrow().floatValue();
-                    weights.put(Identifier.parse(name), weight);
+                    weights.put(ResourceLocation.parse(name), weight);
                 });
                 return new ClimateType(weights);
             }).map(weights -> Pair.of(weights, input));
@@ -64,13 +64,13 @@ public class ClimateType {
         }
     });
 
-    private final Object2FloatMap<Identifier> weights;
+    private final Object2FloatMap<ResourceLocation> weights;
 
-    public ClimateType(Object2FloatMap<Identifier> weights) {
+    public ClimateType(Object2FloatMap<ResourceLocation> weights) {
         this.weights = weights;
     }
 
-    public Object2FloatMap<Identifier> getWeights() {
+    public Object2FloatMap<ResourceLocation> getWeights() {
         return weights;
     }
 }

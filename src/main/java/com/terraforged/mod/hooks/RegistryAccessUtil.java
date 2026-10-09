@@ -105,7 +105,7 @@ public class RegistryAccessUtil {
      */
     private record InfoLookupProvider(RegistryOps.RegistryInfoLookup lookup) implements HolderLookup.Provider {
         @Override
-        public Stream<ResourceKey<? extends Registry<?>>> listRegistryKeys() {
+        public Stream<ResourceKey<? extends Registry<?>>> listRegistries() {
             // A RegistryInfoLookup answers lookups but cannot enumerate. Nothing in TerraForged asks
             // for the registry list -- it only ever resolves registries it names -- so reporting none
             // is honest rather than lossy.
@@ -143,9 +143,9 @@ public class RegistryAccessUtil {
     public static void printRegistryContents(Registry<?> registry) {
         if (!Environment.DEBUGGING) return;
 
-        TerraForged.LOG.info(" - Registry: {}, Size: {}", registry.key().identifier(), registry.size());
+        TerraForged.LOG.info(" - Registry: {}, Size: {}", registry.key().location(), registry.size());
         for (var entry : registry.entrySet()) {
-            TerraForged.LOG.info("  - {}", entry.getKey().identifier());
+            TerraForged.LOG.info("  - {}", entry.getKey().location());
         }
     }
 }

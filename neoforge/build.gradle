@@ -36,6 +36,11 @@ neoForge {
     }
 }
 
+dependencies {
+    // 26.x bundles jspecify; 1.21.1 does not.
+    compileOnly "org.jspecify:jspecify:1.0.0"
+}
+
 // Forward the console to the dev server, as Loom does, so scripted runs (tools/neoforge_test.sh) can
 // type commands into it -- ModDevGradle leaves the server's stdin unconnected, so "stop" never arrives.
 tasks.matching { it.name == 'runServer' }.configureEach {

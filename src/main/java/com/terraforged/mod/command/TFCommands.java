@@ -38,7 +38,6 @@ import com.terraforged.mod.worldgen.GeneratorPreset;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.server.permissions.Permissions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
@@ -57,7 +56,7 @@ public class TFCommands {
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> root(String name) {
-        return Commands.literal(name).requires(s -> s.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER));
+        return Commands.literal(name).requires(s -> s.hasPermission(2));
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> getLocateTerrainCommand() {
@@ -78,7 +77,7 @@ public class TFCommands {
 
         var player = context.getSource().getPlayerOrException();
         var at = player.blockPosition();
-        var state = player.level().getChunkSource().randomState();
+        var state = player.serverLevel().getChunkSource().randomState();
 
         Component result;
         if (terrain == null) {
@@ -117,8 +116,8 @@ public class TFCommands {
                 .append(text("Teleport")
                         .withStyle(ChatFormatting.YELLOW, ChatFormatting.UNDERLINE)
                         .withStyle(style -> style
-                                .withClickEvent(new ClickEvent.RunCommand(commandText))
-                                .withHoverEvent(new HoverEvent.ShowText(
+                                .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, commandText))
+                                .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
                                         text("Location: ").withStyle(ChatFormatting.GREEN)
                                                 .append(text(positionText).withStyle(ChatFormatting.YELLOW))))));
     }

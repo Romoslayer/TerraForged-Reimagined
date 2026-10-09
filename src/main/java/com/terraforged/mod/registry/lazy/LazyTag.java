@@ -28,7 +28,7 @@ import net.minecraft.core.registries.Registries;
 import com.terraforged.mod.TerraForged;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.biome.Biome;
 
@@ -37,7 +37,7 @@ import java.util.function.Supplier;
 public class LazyTag<T> extends LazyValue<TagKey<T>> {
     protected final Supplier<ResourceKey<? extends Registry<T>>> registry;
 
-    public LazyTag(Supplier<ResourceKey<? extends Registry<T>>> registry, Identifier name) {
+    public LazyTag(Supplier<ResourceKey<? extends Registry<T>>> registry, ResourceLocation name) {
         super(name);
         this.registry = registry;
     }

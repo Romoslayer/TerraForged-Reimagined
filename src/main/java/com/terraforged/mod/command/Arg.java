@@ -39,7 +39,7 @@ public class Arg {
             if (terrainTypes.isEmpty()) {
                 TerrainType.forEach(type -> builder.suggest(type.getName()));
             } else {
-                terrainTypes.get().forEach(type -> builder.suggest(type.getName()));
+                terrainTypes.get().listElements().forEach(type -> builder.suggest(type.value().getName()));
             }
             return builder.buildFuture();
         });

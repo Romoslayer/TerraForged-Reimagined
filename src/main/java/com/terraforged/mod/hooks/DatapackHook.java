@@ -118,7 +118,7 @@ public class DatapackHook {
         if (current != null && isTerraForged(current)) return;
 
         var presets = uiState.getSettings().worldgenLoadContext().lookupOrThrow(Registries.WORLD_PRESET);
-        presets.get(TerraForged.WORLD_PRESET).ifPresentOrElse(preset -> {
+        presets.get(net.minecraft.resources.ResourceKey.create(Registries.WORLD_PRESET, TerraForged.WORLD_PRESET)).ifPresentOrElse(preset -> {
             uiState.setWorldType(new WorldCreationUiState.WorldTypeEntry(preset));
             TerraForged.LOG.info("Selected terraforged world_preset");
         }, () -> reportPresets("screen init", uiState));
@@ -133,7 +133,7 @@ public class DatapackHook {
      */
     public static void reportPresets(String when, WorldCreationUiState uiState) {
         var presets = uiState.getSettings().worldgenLoadContext().lookupOrThrow(Registries.WORLD_PRESET);
-        var ids = presets.listElements().map(entry -> entry.key().identifier().toString()).sorted().toList();
+        var ids = presets.listElements().map(entry -> entry.key().location().toString()).sorted().toList();
 
         if (ids.contains(TerraForged.WORLD_PRESET.toString())) {
             TerraForged.LOG.info("[{}] {} is registered ({} presets available)",
@@ -146,7 +146,7 @@ public class DatapackHook {
 
     private static boolean isTerraForged(WorldCreationUiState.WorldTypeEntry entry) {
         return entry.preset().unwrapKey()
-                .filter(key -> key.identifier().getNamespace().equals(TerraForged.MODID))
+                .filter(key -> key.location().getNamespace().equals(TerraForged.MODID))
                 .isPresent();
     }
 

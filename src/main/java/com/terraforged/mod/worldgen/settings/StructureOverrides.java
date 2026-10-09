@@ -68,7 +68,7 @@ public final class StructureOverrides {
         int replaced = 0, disabled = 0;
 
         for (var holder : base.possibleStructureSets()) {
-            String id = holder.unwrapKey().map(key -> key.identifier().toString()).orElse(null);
+            String id = holder.unwrapKey().map(key -> key.location().toString()).orElse(null);
             var set = holder.value();
             var placement = set.placement();
 

@@ -45,7 +45,7 @@ import net.minecraft.core.HolderLookup;
 import net.minecraft.data.CachedOutput;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
@@ -99,7 +99,7 @@ public class DataGen {
         var dimensionJson = Codecs.encode(dimension, LevelStem.CODEC, writeOps);
 
         var dimensions = json.getAsJsonObject("dimensions");
-        dimensions.add(LevelStem.OVERWORLD.identifier().toString(), dimensionJson);
+        dimensions.add(LevelStem.OVERWORLD.location().toString(), dimensionJson);
 
         export(dir, Registries.WORLD_PRESET, TerraForged.WORLD_PRESET, json);
     }
@@ -126,7 +126,7 @@ public class DataGen {
         }
         attributes.addProperty(CLOUD_HEIGHT_ATTRIBUTE, CLOUD_HEIGHT);
 
-        export(dir, Registries.DIMENSION_TYPE, BuiltinDimensionTypes.OVERWORLD.identifier(), json);
+        export(dir, Registries.DIMENSION_TYPE, BuiltinDimensionTypes.OVERWORLD.location(), json);
     }
 
     private void genBuiltin(Path dir, HolderLookup.Provider registries, RegistryOps<JsonElement> writeOps) {
@@ -155,17 +155,17 @@ public class DataGen {
                         .result()
                         .orElseThrow();
 
-                export(dir, registry.key(), entry.getKey().identifier(), json);
+                export(dir, registry.key(), entry.getKey().location(), json);
             } catch (Throwable t) {
                 new EncodingException(entry.getKey(), t).printStackTrace();
             }
         }
     }
 
-    private void export(Path dir, ResourceKey<?> registry, Identifier name, JsonElement json) {
+    private void export(Path dir, ResourceKey<?> registry, ResourceLocation name, JsonElement json) {
         var file = dir.resolve("data")
                 .resolve(name.getNamespace())
-                .resolve(registry.identifier().getPath())
+                .resolve(registry.location().getPath())
                 .resolve(name.getPath() + ".json");
 
         if (cache != null) {

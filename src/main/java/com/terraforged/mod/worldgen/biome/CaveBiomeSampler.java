@@ -105,7 +105,7 @@ public class CaveBiomeSampler {
 
         for (var holder : biomes) {
             var features = holder.value().getGenerationSettings().features();
-            String id = holder.unwrapKey().map(key -> key.identifier().toString()).orElse("?");
+            String id = holder.unwrapKey().map(key -> key.location().toString()).orElse("?");
 
             if (features.size() < steps) {
                 com.terraforged.mod.TerraForged.LOG.warn(

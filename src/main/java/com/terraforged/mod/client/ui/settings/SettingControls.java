@@ -187,7 +187,7 @@ public final class SettingControls {
     }
 
     public static <T> AbstractWidget cycle(Component label, T[] values, T value, Consumer<T> setter) {
-        return CycleButton.<T>builder(v -> Component.literal(((Enum<?>) v).name()), value)
+        return CycleButton.<T>builder(v -> Component.literal(((Enum<?>) v).name())).withInitialValue(value)
                 .withValues(Arrays.asList(values))
                 .create(0, 0, 150, 20, label, (button, v) -> setter.accept(v));
     }

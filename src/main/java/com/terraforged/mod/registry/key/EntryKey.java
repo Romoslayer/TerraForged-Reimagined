@@ -28,14 +28,14 @@ import com.terraforged.mod.TerraForged;
 import com.terraforged.mod.registry.lazy.LazyValue;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.function.Supplier;
 
 public class EntryKey<T> extends LazyValue<ResourceKey<T>> {
     protected final Supplier<ResourceKey<Registry<T>>> registry;
 
-    protected EntryKey(Supplier<ResourceKey<Registry<T>>> registry, Identifier name) {
+    protected EntryKey(Supplier<ResourceKey<Registry<T>>> registry, ResourceLocation name) {
         super(name);
         this.registry = registry;
     }

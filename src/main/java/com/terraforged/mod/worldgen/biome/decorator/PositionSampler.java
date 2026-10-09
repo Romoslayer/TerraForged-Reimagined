@@ -246,7 +246,7 @@ public class PositionSampler {
     private static int placeAt(long seed, int offset, int x, int z, SamplerContext context) {
         int chunkX = x >> 4;
         int chunkZ = z >> 4;
-        if (chunkX != context.chunk.getPos().x() || chunkZ != context.chunk.getPos().z()) return offset;
+        if (chunkX != context.chunk.getPos().x || chunkZ != context.chunk.getPos().z) return offset;
 
         int y = context.chunk.getHeight(Heightmap.Types.OCEAN_FLOOR_WG, x, z);
         if (y <= context.generator.getSeaLevel()) return offset;
@@ -330,7 +330,7 @@ public class PositionSampler {
     private static boolean isFeatureChunk(int x, int z, SamplerContext context) {
         int chunkX = x >> 4;
         int chunkZ = z >> 4;
-        return chunkX == context.chunk.getPos().x() && chunkZ == context.chunk.getPos().z();
+        return chunkX == context.chunk.getPos().x && chunkZ == context.chunk.getPos().z;
     }
 
     public interface Sampler<T> {

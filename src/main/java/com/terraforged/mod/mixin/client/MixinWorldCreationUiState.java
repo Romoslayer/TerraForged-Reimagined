@@ -64,7 +64,7 @@ public abstract class MixinWorldCreationUiState {
     private void onSetWorldType(WorldCreationUiState.WorldTypeEntry worldType, CallbackInfo ci) {
         var preset = worldType.preset();
         if (preset == null) return;
-        if (preset.unwrapKey().filter(key -> key.identifier().equals(TerraForged.WORLD_PRESET)).isEmpty()) return;
+        if (preset.unwrapKey().filter(key -> key.location().equals(TerraForged.WORLD_PRESET)).isEmpty()) return;
 
         String name = Presets.defaultName();
         if (Presets.DEFAULT.equals(name)) return;
@@ -95,7 +95,7 @@ public abstract class MixinWorldCreationUiState {
         if (preset == null) return;
 
         boolean isTerraForged = preset.unwrapKey()
-                .filter(key -> key.identifier().equals(TerraForged.WORLD_PRESET))
+                .filter(key -> key.location().equals(TerraForged.WORLD_PRESET))
                 .isPresent();
 
         if (isTerraForged) {

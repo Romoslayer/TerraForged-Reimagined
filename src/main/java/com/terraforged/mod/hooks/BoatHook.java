@@ -25,10 +25,10 @@
 package com.terraforged.mod.hooks;
 
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
+import net.minecraft.world.entity.vehicle.Boat;
 
 public class BoatHook {
-    public static boolean floatTheBoat(AbstractBoat boat) {
+    public static boolean floatTheBoat(Boat boat) {
         // Ignore if not being ridden by a player
         if (!(boat.getFirstPassenger() instanceof Player)) return false;
 

@@ -63,7 +63,7 @@ public class BufferedBiomeManager extends DelegateBiomeManager {
         requests++;
         int x = pos.getX() >> 4;
         int z = pos.getZ() >> 4;
-        if (x == chunkPos.x() && z == chunkPos.z()) {
+        if (x == chunkPos.x && z == chunkPos.z) {
             int dx = pos.getX() - chunkPos.getMinBlockX();
             int dz = pos.getZ() - chunkPos.getMinBlockZ();
             return buffer[index(dx, dz)];

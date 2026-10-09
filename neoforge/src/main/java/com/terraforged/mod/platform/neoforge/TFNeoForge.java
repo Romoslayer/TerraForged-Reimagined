@@ -29,7 +29,7 @@ import com.terraforged.mod.TerraForged;
 import com.terraforged.mod.command.TFCommands;
 import com.terraforged.mod.lifecycle.CommonSetup;
 import net.minecraft.core.Registry;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.Biome;
 import net.neoforged.bus.api.IEventBus;
@@ -67,7 +67,7 @@ public class TFNeoForge extends TerraForged {
 
     /** NeoForge freezes the built-in registries outside {@link RegisterEvent}, so entries wait for it. */
     @Override
-    public <T> void registerBuiltIn(Registry<T> registry, Identifier id, T value) {
+    public <T> void registerBuiltIn(Registry<T> registry, ResourceLocation id, T value) {
         var key = registry.key();
         BUILT_INS.add(event -> event.register(key, id, () -> value));
     }
@@ -101,17 +101,12 @@ public class TFNeoForge extends TerraForged {
     }
 
     /**
-     * The root the bundled datapack is copied from. A built jar has a single root, the jar itself; a dev
-     * run has one per output directory (classes, resources), and only the resources one holds
-     * {@code default/}.
+     * The root the bundled datapack is copied from: whichever root holds {@code default/} -- the jar
+     * itself when built, the resources output folder in a dev run.
      */
     private static Path getRootPath() {
-        var contents = ModList.get().getModFileById(MODID).getFile().getContents();
-        for (var root : contents.getContentRoots()) {
-            if (!Files.isDirectory(root) || Files.isDirectory(root.resolve("default"))) {
-                return root;
-            }
-        }
-        return contents.getPrimaryPath();
+        var file = ModList.get().getModFileById(MODID).getFile();
+        var defaults = file.findResource("default");
+        return Files.isDirectory(defaults) && defaults.getParent() != null ? defaults.getParent() : file.getFilePath();
     }
 }

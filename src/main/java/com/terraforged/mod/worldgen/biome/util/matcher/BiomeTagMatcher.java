@@ -58,7 +58,7 @@ public class BiomeTagMatcher implements BiomeMatcher {
 
         private boolean isTerraForged(Holder<Biome> biome) {
             return biome.unwrapKey()
-                    .map(key -> key.identifier().getNamespace().equals(TerraForged.MODID))
+                    .map(key -> key.location().getNamespace().equals(TerraForged.MODID))
                     .orElse(false);
         }
     }

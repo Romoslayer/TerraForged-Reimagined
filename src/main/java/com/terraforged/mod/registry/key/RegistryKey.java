@@ -31,7 +31,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -40,7 +40,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 public class RegistryKey<T> extends LazyValue<ResourceKey<Registry<T>>> {
-    public RegistryKey(Identifier name) {
+    public RegistryKey(ResourceLocation name) {
         super(name);
     }
 
@@ -77,7 +77,7 @@ public class RegistryKey<T> extends LazyValue<ResourceKey<Registry<T>>> {
         // A RegistryLookup enumerates as holders rather than key/value pairs; sort on the same key
         // so the ordering the generator depends on is unchanged.
         return access.lookupOrThrow(get()).listElements()
-                .sorted(Comparator.comparing(holder -> holder.key().identifier()))
+                .sorted(Comparator.comparing(holder -> holder.key().location()))
                 .map(Holder::value)
                 .toArray(arrayFunc);
     }
@@ -90,7 +90,7 @@ public class RegistryKey<T> extends LazyValue<ResourceKey<Registry<T>>> {
      */
     public java.util.List<String> entryIds(HolderLookup.Provider access) {
         return access.lookupOrThrow(get()).listElements()
-                .map(holder -> holder.key().identifier())
+                .map(holder -> holder.key().location())
                 .sorted()
                 .map(id -> id.getNamespace().equals(com.terraforged.mod.TerraForged.MODID) ? id.getPath() : id.toString())
                 .toList();
@@ -107,7 +107,7 @@ public class RegistryKey<T> extends LazyValue<ResourceKey<Registry<T>>> {
     }
 
     private static <T> T[] toSortedArray(Stream<Map.Entry<ResourceKey<T>, T>> stream, IntFunction<T[]> arrayFunc) {
-        return stream.sorted(Comparator.comparing(e -> e.getKey().identifier()))
+        return stream.sorted(Comparator.comparing(e -> e.getKey().location()))
                 .map(Map.Entry::getValue)
                 .toArray(arrayFunc);
     }

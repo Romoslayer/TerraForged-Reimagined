@@ -32,7 +32,7 @@ import com.terraforged.mod.worldgen.GeneratorPreset;
 import com.terraforged.mod.worldgen.asset.TerrainNoise;
 import com.terraforged.mod.worldgen.settings.TerraSettings;
 import com.terraforged.mod.worldgen.terrain.TerrainLevels;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.ObjectSelectionList;
@@ -41,7 +41,6 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.client.gui.screens.worldselection.PresetEditor;
 import net.minecraft.client.gui.screens.worldselection.WorldCreationContext;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
@@ -292,7 +291,7 @@ public class TerraForgedScreen extends Screen {
     private static net.minecraft.client.gui.components.AbstractWidget stringCycle(Component label, java.util.List<String> options,
                                                                                  String current, java.util.function.Consumer<String> setter) {
         String value = options.contains(current) ? current : options.get(0);
-        return net.minecraft.client.gui.components.CycleButton.<String>builder(Component::literal, value)
+        return net.minecraft.client.gui.components.CycleButton.<String>builder(Component::literal).withInitialValue(value)
                 .withValues(options)
                 .create(0, 0, 150, 20, label, (button, v) -> setter.accept(v));
     }
@@ -376,14 +375,14 @@ public class TerraForgedScreen extends Screen {
         // Structures do not appear on the map, so edits here must not rebuild the preview generator.
         Runnable changed = () -> {};
         var sets = context.worldgenLoadContext().lookupOrThrow(Registries.STRUCTURE_SET).listElements()
-                .sorted(java.util.Comparator.comparing(holder -> holder.key().identifier()))
+                .sorted(java.util.Comparator.comparing(holder -> holder.key().location()))
                 .toList();
 
         // Ring-placed sets (strongholds) first, as 1.16.5 put the stronghold at the top.
         for (var holder : sets) {
             if (!(holder.value().placement() instanceof net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStructurePlacement rings)) continue;
 
-            String id = holder.key().identifier().toString();
+            String id = holder.key().location().toString();
             var entry = settings.structures.rings.computeIfAbsent(id, k -> {
                 var e = new TerraSettings.RingsEntry();
                 e.distance = rings.distance();
@@ -393,14 +392,14 @@ public class TerraForgedScreen extends Screen {
                 return e;
             });
 
-            list.addHeader(structureTitle(holder.key().identifier()));
+            list.addHeader(structureTitle(holder.key().location()));
             SettingControls.addObject(list, entry, showTooltips, changed);
         }
 
         for (var holder : sets) {
             if (!(holder.value().placement() instanceof net.minecraft.world.level.levelgen.structure.placement.RandomSpreadStructurePlacement spread)) continue;
 
-            String id = holder.key().identifier().toString();
+            String id = holder.key().location().toString();
             var entry = settings.structures.spread.computeIfAbsent(id, k -> {
                 var e = new TerraSettings.SpreadEntry();
                 e.spacing = spread.spacing();
@@ -409,13 +408,13 @@ public class TerraForgedScreen extends Screen {
                 return e;
             });
 
-            list.addHeader(structureTitle(holder.key().identifier()));
+            list.addHeader(structureTitle(holder.key().location()));
             SettingControls.addObject(list, entry, showTooltips, changed);
         }
     }
 
     /** Vanilla's sets read as titles ("Villages"); anyone else's keep their namespace, as 1.16.5 showed them. */
-    private static Component structureTitle(net.minecraft.resources.Identifier id) {
+    private static Component structureTitle(net.minecraft.resources.ResourceLocation id) {
         return id.getNamespace().equals("minecraft") ? SettingControls.title(id.getPath()) : Component.literal(id.toString());
     }
 
@@ -472,7 +471,7 @@ public class TerraForgedScreen extends Screen {
         int x = rightX + 6, w = rightWidth - 12, y = contentTop + 6;
 
         presetName = new EditBox(font, x, y, w, BUTTON_HEIGHT, Component.translatable(KEY + "preset_name"));
-        presetName.setHint(Component.translatable(KEY + "preset_name").withStyle(EditBox.SEARCH_HINT_STYLE));
+        presetName.setHint(Component.translatable(KEY + "preset_name").withStyle(net.minecraft.ChatFormatting.ITALIC).withStyle(net.minecraft.ChatFormatting.GRAY));
         addRenderableWidget(presetName);
         y += BUTTON_HEIGHT + GAP;
 
@@ -584,15 +583,15 @@ public class TerraForgedScreen extends Screen {
         }
 
         @Override
-        protected int scrollBarX() {
+        protected int getScrollbarPosition() {
             return getX() + width - 6;
         }
 
         @Override
-        protected void extractListBackground(GuiGraphicsExtractor graphics) {}
+        protected void renderListBackground(GuiGraphics graphics) {}
 
         @Override
-        protected void extractListSeparators(GuiGraphicsExtractor graphics) {}
+        protected void renderListSeparators(GuiGraphics graphics) {}
 
         @Override
         public void setSelected(@Nullable Entry entry) {
@@ -618,15 +617,21 @@ public class TerraForgedScreen extends Screen {
             }
 
             @Override
-            public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float a) {
-                graphics.text(font, label, getContentX() + 4, getContentY() + 5, 0xFFFFFFFF, true);
+            public void render(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX,
+                               int mouseY, boolean hovered, float a) {
+                graphics.drawString(font, label, left + 4, top + 5, 0xFFFFFFFF, true);
             }
 
+            /** 1.21.1 reports no double click, so it is timed here, as vanilla's own lists do. */
+            private long lastClick;
+
             @Override
-            public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+            public boolean mouseClicked(double mouseX, double mouseY, int button) {
                 PresetList.this.setSelected(this);
-                if (doubleClick) loadPreset();
-                return super.mouseClicked(event, doubleClick);
+                long now = net.minecraft.Util.getMillis();
+                if (now - lastClick < 250L) loadPreset();
+                lastClick = now;
+                return true;
             }
         }
     }
@@ -639,8 +644,8 @@ public class TerraForgedScreen extends Screen {
     }
 
     @Override
-    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
-        super.extractBackground(graphics, mouseX, mouseY, a);
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float a) {
+        super.renderBackground(graphics, mouseX, mouseY, a);
 
         // The two dark panels behind the page and the preview column.
         graphics.fill(leftX, contentTop, leftX + leftWidth, contentBottom, 0xA0000000);
@@ -648,9 +653,9 @@ public class TerraForgedScreen extends Screen {
     }
 
     @Override
-    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
-        super.extractRenderState(graphics, mouseX, mouseY, a);
-        graphics.text(font, page.title(), leftX + 2, 12, 0xFFFFFFFF, true);
+    public void render(GuiGraphics graphics, int mouseX, int mouseY, float a) {
+        super.render(graphics, mouseX, mouseY, a);
+        graphics.drawString(font, page.title(), leftX + 2, 12, 0xFFFFFFFF, true);
     }
 
     private void done() {
@@ -666,7 +671,7 @@ public class TerraForgedScreen extends Screen {
 
     @Override
     public void onClose() {
-        minecraft.gui.setScreen(parent);
+        minecraft.setScreen(parent);
     }
 
     /**

@@ -34,7 +34,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 
@@ -63,7 +63,7 @@ public interface ModClimates {
 
     class Factory {
         static ClimateType create(BiomeType type, List<Holder<Biome>> biomes) {
-            var weights = new Object2FloatOpenHashMap<Identifier>();
+            var weights = new Object2FloatOpenHashMap<ResourceLocation>();
 
             for (var biome : biomes) {
                 var biomeType = BiomeUtil.getType(biome);
@@ -71,7 +71,7 @@ public interface ModClimates {
 
                 var key = biome.unwrapKey().orElseThrow();
 
-                weights.put(key.identifier(), getWeight(key, biome));
+                weights.put(key.location(), getWeight(key, biome));
             }
 
             return new ClimateType(weights);

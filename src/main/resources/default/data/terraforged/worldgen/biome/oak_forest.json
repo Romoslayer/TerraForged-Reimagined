@@ -44,21 +44,23 @@
     [
       "minecraft:glow_lichen",
       "minecraft:patch_tall_grass_2",
-      "minecraft:trees_birch_and_oak_leaf_litter",
+      "minecraft:trees_birch_and_oak",
       "minecraft:flower_plains",
       "minecraft:patch_grass_plain",
       "minecraft:brown_mushroom_normal",
       "minecraft:red_mushroom_normal",
-      "minecraft:patch_pumpkin",
-      "minecraft:patch_sugar_cane"
+      "minecraft:patch_sugar_cane",
+      "minecraft:patch_pumpkin"
     ],
     ["minecraft:freeze_top_layer"]
   ],
-  "carvers": [
-    "minecraft:cave",
-    "minecraft:cave_extra_underground",
-    "minecraft:canyon"
-  ],
+  "carvers": {
+    "air": [
+      "minecraft:cave",
+      "minecraft:cave_extra_underground",
+      "minecraft:canyon"
+    ]
+  },
   "effects": {
     "fog_color": 12638463,
     "sky_color": 7907327,

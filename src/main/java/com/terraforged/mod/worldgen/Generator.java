@@ -225,9 +225,9 @@ public class Generator extends ChunkGenerator implements IGenerator {
     }
 
     @Override
-    public void createStructures(RegistryAccess access, ChunkGeneratorStructureState state, StructureManager structures, ChunkAccess chunk, StructureTemplateManager templates, ResourceKey<Level> level) {
+    public void createStructures(RegistryAccess access, ChunkGeneratorStructureState state, StructureManager structures, ChunkAccess chunk, StructureTemplateManager templates) {
         terrainCache().hint(Seeds.get(state.getLevelSeed()), chunk.getPos());
-        super.createStructures(access, state, structures, chunk, templates, level);
+        super.createStructures(access, state, structures, chunk, templates);
     }
 
     @Override
@@ -278,9 +278,10 @@ public class Generator extends ChunkGenerator implements IGenerator {
     }
 
     @Override
-    public void applyCarvers(WorldGenRegion region, long seed, RandomState state, BiomeManager biomes, StructureManager structures, ChunkAccess chunk) {
-        // MC 26.x carves in a single pass -- the old GenerationStep.Carving stage argument is gone.
-        // TerraForged ignored the stage anyway, so nothing is lost (and caves are no longer carved twice).
+    public void applyCarvers(WorldGenRegion region, long seed, RandomState state, BiomeManager biomes, StructureManager structures, ChunkAccess chunk,
+                             net.minecraft.world.level.levelgen.GenerationStep.Carving stage) {
+        // 1.21.1 calls this once per chunk, with the AIR stage only (ChunkStatusTasks#generateCarvers), so
+        // TerraForged carves once, as on 26.x where the stage argument is gone.
         biomeGenerator().carve(seed, chunk, region, biomes, this, structures);
 
         // Deep Caves below the near-surface zone: after surface rules, so deep cave floors stay bare rock.
@@ -354,7 +355,7 @@ public class Generator extends ChunkGenerator implements IGenerator {
         if (settings.disableMobGeneration()) return;
 
         var chunkPos = region.getCenter();
-        var position = chunkPos.getWorldPosition().atY(region.getMaxY());
+        var position = chunkPos.getWorldPosition().atY((region.getMaxBuildHeight() - 1));
 
         var holder = region.getBiome(position);
         var random = new WorldgenRandom(new LegacyRandomSource(region.getSeed()));

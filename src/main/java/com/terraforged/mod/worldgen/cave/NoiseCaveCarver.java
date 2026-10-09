@@ -120,7 +120,7 @@ public class NoiseCaveCarver {
             }
             if (kept) continue;
 
-            chunk.setBlockState(pos, air, 0);
+            chunk.setBlockState(pos, air, false);
 
             if ((cy >> 2) >= maxBiomeY) continue;
 

@@ -77,7 +77,7 @@ public final class PreviewRenderer {
 
         String biome = mode == RenderMode.BIOME
                 ? model.biomes().sampleBiome(model.seed(), x, z).unwrapKey()
-                        .map(key -> key.identifier().getPath()).orElse("?")
+                        .map(key -> key.location().getPath()).orElse("?")
                 : climateName;
 
         return new Info(x, z, terrain, biome);
@@ -124,7 +124,7 @@ public final class PreviewRenderer {
                     case MOISTURE -> water[i] ? SHALLOW_WATER : lerp(0xE0C070, 0x2060C0, climate.moisture);
                     case TERRAIN_REGION -> water[i] ? SHALLOW_WATER : hashColor(terrainName);
                     case BIOME -> hashColor(model.biomes().sampleBiome(seed, x, z).unwrapKey()
-                            .map(key -> key.identifier().toString()).orElse(""));
+                            .map(key -> key.location().toString()).orElse(""));
                 };
             }
         }

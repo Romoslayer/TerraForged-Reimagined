@@ -30,10 +30,11 @@ import com.terraforged.mod.command.TFCommands;
 import com.terraforged.mod.lifecycle.CommonSetup;
 import com.terraforged.mod.platform.forge.client.TFForgeClient;
 import net.minecraft.core.Registry;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
@@ -61,9 +62,10 @@ public class TFForge extends TerraForged {
 
     public TFForge(FMLJavaModLoadingContext context) {
         super(TFForge::getRootPath);
-        RegisterEvent.getBus(context.getModBusGroup()).addListener(TFForge::onRegister);
-        DataPackRegistryEvent.NewRegistry.BUS.addListener(TFForge::onNewDataRegistries);
-        RegisterCommandsEvent.BUS.addListener(TFForge::onRegisterCommands);
+        var modBus = context.getModEventBus();
+        modBus.addListener(TFForge::onRegister);
+        modBus.addListener(TFForge::onNewDataRegistries);
+        MinecraftForge.EVENT_BUS.addListener(TFForge::onRegisterCommands);
         CommonSetup.STAGE.run();
 
         if (FMLEnvironment.dist == Dist.CLIENT) {
@@ -73,7 +75,7 @@ public class TFForge extends TerraForged {
 
     /** Forge freezes the built-in registries outside {@link RegisterEvent}, so entries wait for it. */
     @Override
-    public <T> void registerBuiltIn(Registry<T> registry, Identifier id, T value) {
+    public <T> void registerBuiltIn(Registry<T> registry, ResourceLocation id, T value) {
         var key = registry.key();
         BUILT_INS.add(event -> event.register(key, id, () -> value));
     }
@@ -111,7 +113,7 @@ public class TFForge extends TerraForged {
      * folder in a dev run.
      */
     private static Path getRootPath() {
-        var file = ModList.getModFileById(MODID).getFile();
+        var file = ModList.get().getModFileById(MODID).getFile();
         var defaults = file.findResource("default");
         return defaults.getParent() != null ? defaults.getParent() : file.getFilePath();
     }

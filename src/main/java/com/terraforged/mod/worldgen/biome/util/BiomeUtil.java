@@ -34,7 +34,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
@@ -50,9 +50,9 @@ public class BiomeUtil {
     /** See {@link #getByClimate} for why this is not vanilla's 2.0. */
     private static final float MAX_TEMPERATURE = 1.2F;
 
-    private static final Map<BiomeType, Identifier> TYPE_NAMES = new EnumMap<>(BiomeType.class);
+    private static final Map<BiomeType, ResourceLocation> TYPE_NAMES = new EnumMap<>(BiomeType.class);
 
-    private static final Comparator<ResourceKey<?>> KEY_COMPARATOR = Comparator.comparing(ResourceKey::identifier);
+    private static final Comparator<ResourceKey<?>> KEY_COMPARATOR = Comparator.comparing(ResourceKey::location);
 
     public static Comparator<Holder<Biome>> BIOME_SORTER = (o1, o2) -> {
         var k1 = o1.unwrapKey().orElseThrow();
@@ -68,7 +68,7 @@ public class BiomeUtil {
         }
     }
 
-    public static Identifier getRegistryName(BiomeType type) {
+    public static ResourceLocation getRegistryName(BiomeType type) {
         return TYPE_NAMES.get(type);
     }
 
@@ -119,7 +119,7 @@ public class BiomeUtil {
         if (biome.is(ModTags.NON_SURFACE.get())) return true;
 
         return biome.unwrapKey()
-                .map(key -> key.identifier().getPath())
+                .map(key -> key.location().getPath())
                 .filter(path -> path.startsWith("cave/") || path.endsWith("_caves"))
                 .isPresent();
     }

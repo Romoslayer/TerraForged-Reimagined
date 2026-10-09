@@ -41,6 +41,11 @@ import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.levelgen.Heightmap;
 
 public class Surface {
+    /**
+     * The soils the erosion decorator strips from steep slopes: dirt, grass, podzol, mycelium, moss and mud.
+     * On 1.21.1 that is {@code #minecraft:dirt}, as upstream used; 26.x moved most of it into
+     * {@code #minecraft:substrate_overworld} and reads that instead, so every version erodes the same soils.
+     */
     protected static final TagKey<Block> ERODIBLE = BlockTags.DIRT;
 
     public static void apply(TerrainData terrainData, ChunkAccess chunk, ChunkGenerator generator) {
@@ -68,7 +73,7 @@ public class Surface {
 
                 int bottom = pos.getY();
                 while (y > bottom) {
-                    chunk.setBlockState(pos.setY(y), solid, 0);
+                    chunk.setBlockState(pos.setY(y), solid, false);
                     y--;
                 }
             }
@@ -128,7 +133,7 @@ public class Surface {
                 var state = chunk.getBlockState(pos.set(x, y, z));
                 if (state.is(Blocks.WATER) && state.getValue(LiquidBlock.LEVEL) == 0) {
                     if (shouldSmooth(x, y, z, chunk, region, pos)) {
-                        chunk.setBlockState(pos.set(x, y, z), waterState, 0);
+                        chunk.setBlockState(pos.set(x, y, z), waterState, false);
                     }
                 }
             }
@@ -169,11 +174,11 @@ public class Surface {
 
         int layers = 1 + NoiseUtil.floor(delta * 7.9999F);
         state = state.setValue(SnowLayerBlock.LAYERS, layers);
-        chunk.setBlockState(pos, state, 0);
+        chunk.setBlockState(pos, state, false);
     }
 
     protected static void erodeSnow(BlockPos.MutableBlockPos pos, ChunkAccess chunk) {
-        chunk.setBlockState(pos, Blocks.AIR.defaultBlockState(), 0);
+        chunk.setBlockState(pos, Blocks.AIR.defaultBlockState(), false);
 
         int y0 = pos.getY() - 1;
         int y1 = Math.max(pos.getY() - 15, 0);
@@ -183,7 +188,7 @@ public class Surface {
 
             var state = chunk.getBlockState(pos);
             if (isErodible(state)) {
-                chunk.setBlockState(pos, Blocks.STONE.defaultBlockState(), 0);
+                chunk.setBlockState(pos, Blocks.STONE.defaultBlockState(), false);
             } else {
                 return;
             }
@@ -195,7 +200,7 @@ public class Surface {
     }
 
     protected static boolean sameChunk(BlockPos pos, ChunkPos chunk) {
-        return pos.getX() >> 4 == chunk.x() && pos.getZ() >> 4 == chunk.z();
+        return pos.getX() >> 4 == chunk.x && pos.getZ() >> 4 == chunk.z;
     }
 
     protected static BlockState findSolid(BlockPos.MutableBlockPos pos, ChunkAccess chunk) {

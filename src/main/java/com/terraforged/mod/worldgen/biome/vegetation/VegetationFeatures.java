@@ -128,7 +128,7 @@ public class VegetationFeatures {
 
             for (var feature : vegetation) {
                 // Holders carry their key; the lookup has no value-to-key reverse map any more.
-                var featureKey = feature.unwrapKey().map(net.minecraft.resources.ResourceKey::identifier).orElse(null);
+                var featureKey = feature.unwrapKey().map(net.minecraft.resources.ResourceKey::location).orElse(null);
                 if (featureKey == null) {
                     other.add(feature.value());
                 } else {

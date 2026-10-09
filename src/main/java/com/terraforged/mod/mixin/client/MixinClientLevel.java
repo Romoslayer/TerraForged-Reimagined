@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2021 TerraForged
+ * Copyright (c) 2026 Romoslayer
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,23 +22,35 @@
  * SOFTWARE.
  */
 
-package com.terraforged.mod.mixin.common;
+package com.terraforged.mod.mixin.client;
 
-import com.terraforged.mod.hooks.BoatHook;
-import net.minecraft.world.entity.vehicle.Boat;
+import com.terraforged.mod.client.ingame.TerraForgedOverworldEffects;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.DimensionSpecialEffects;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(Boat.class)
-public class MixinBoat {
-    // 1.21.1 has one Boat class (chest boats and rafts extend it), so this covers every boat.
-    @Inject(method = "isUnderwater", at = @At("RETURN"), cancellable = true)
-    private void onIsUnderwater(CallbackInfoReturnable<Boat.Status> cir) {
-        if (cir.getReturnValue() != null && BoatHook.floatTheBoat((Boat) (Object) this)) {
-            // Clear the status so the boat doesn't sink
-            cir.setReturnValue(null);
+/**
+ * Raises the clouds over a TerraForged overworld; see {@link TerraForgedOverworldEffects}. Client-only, so
+ * neither the server nor any other client needs the mod for this.
+ */
+@Mixin(ClientLevel.class)
+public abstract class MixinClientLevel {
+    @Shadow
+    @Final
+    @Mutable
+    private DimensionSpecialEffects effects;
+
+    @Inject(method = "<init>", at = @At("RETURN"))
+    private void onInit(CallbackInfo ci) {
+        var level = (ClientLevel) (Object) this;
+        if (TerraForgedOverworldEffects.appliesTo(effects, level.dimensionType())) {
+            effects = new TerraForgedOverworldEffects();
         }
     }
 }

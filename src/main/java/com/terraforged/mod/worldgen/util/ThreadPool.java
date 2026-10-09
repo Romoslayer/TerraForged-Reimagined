@@ -24,7 +24,7 @@
 
 package com.terraforged.mod.worldgen.util;
 
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 
 import java.util.concurrent.Executor;
 

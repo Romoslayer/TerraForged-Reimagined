@@ -157,7 +157,7 @@ public class VanillaDecorator {
                                         List<Holder<Structure>> structures) {
 
         var chunkPos = chunk.getPos();
-        var sectionPos = SectionPos.of(chunkPos, level.getMinSectionY());
+        var sectionPos = SectionPos.of(chunkPos, level.getMinSection());
 
         for (int structureIndex = 0; structureIndex < structures.size(); structureIndex++) {
             random.setFeatureSeed(seed, structureIndex, stage);
@@ -208,7 +208,7 @@ public class VanillaDecorator {
 
     /** {@link #describe(Holder)} for the bare features the vegetation sampler holds. */
     public static Supplier<String> describe(WorldGenLevel level, PlacedFeature feature) {
-        return () -> level.registryAccess().lookupOrThrow(Registries.PLACED_FEATURE).getResourceKey(feature)
+        return () -> level.registryAccess().registryOrThrow(Registries.PLACED_FEATURE).getResourceKey(feature)
                 .map(Object::toString).orElseGet(feature::toString);
     }
 
@@ -217,9 +217,9 @@ public class VanillaDecorator {
         if (misc.vanillaSprings && misc.vanillaLavaLakes && misc.vanillaLavaSprings) return false;
 
         var key = feature.unwrapKey();
-        if (key.isEmpty() || !key.get().identifier().getNamespace().equals("minecraft")) return false;
+        if (key.isEmpty() || !key.get().location().getNamespace().equals("minecraft")) return false;
 
-        return switch (key.get().identifier().getPath()) {
+        return switch (key.get().location().getPath()) {
             case "spring_water" -> !misc.vanillaSprings;
             case "lake_lava_underground", "lake_lava_surface" -> !misc.vanillaLavaLakes;
             case "spring_lava", "spring_lava_frozen" -> !misc.vanillaLavaSprings;
@@ -250,8 +250,8 @@ public class VanillaDecorator {
         int minZ = chunkPos.getMinBlockZ();
 
         LevelHeightAccessor levelHeightAccessor = chunkAccess.getHeightAccessorForGeneration();
-        int minY = levelHeightAccessor.getMinY() + 1;
-        int maxY = levelHeightAccessor.getMaxY();
+        int minY = levelHeightAccessor.getMinBuildHeight() + 1;
+        int maxY = (levelHeightAccessor.getMaxBuildHeight() - 1);
 
         return new BoundingBox(minX, minY, minZ, minX + 15, maxY, minZ + 15);
     }

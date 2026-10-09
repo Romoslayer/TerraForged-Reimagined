@@ -61,7 +61,7 @@
       "minecraft:freeze_top_layer"
     ]
   ],
-  "carvers": [],
+  "carvers": {},
   "effects": {
     "fog_color": 12638463,
     "sky_color": 7907327,

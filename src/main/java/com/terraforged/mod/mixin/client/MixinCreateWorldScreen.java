@@ -44,10 +44,9 @@ import java.util.function.Consumer;
  * Hooks the create-world screen so TerraForged's built-in datapack is present and its world preset
  * is preselected.
  *
- * <p>Both targets changed shape in the 1.19.4 screen rewrite: {@code getTempDataPackDir} became
- * {@link #getOrCreateTempDataPackDir()}, and {@code tryApplyNewDataPacks} gained a flag and a
- * callback. Neither is a rename of convenience — the temp directory is now created lazily on demand,
- * so asking for it is what brings it into existence.
+ * <p>{@link #getTempDataPackDir()} creates the temp directory lazily, so asking for it is what brings
+ * it into existence. (26.x renamed it {@code getOrCreateTempDataPackDir}.) {@code tryApplyNewDataPacks}
+ * takes a flag and a callback.
  *
  * <p>The screen's own {@link DirectoryValidator} is passed through rather than a permissive one, so
  * the injected pack is subject to exactly the same symlink checks as any pack the player selects.
@@ -59,7 +58,7 @@ public abstract class MixinCreateWorldScreen {
 
     // Target is private, so this cannot be abstract -- Mixin discards the body.
     @Shadow
-    private Path getOrCreateTempDataPackDir() {
+    private Path getTempDataPackDir() {
         throw new AssertionError();
     }
 
@@ -117,6 +116,6 @@ public abstract class MixinCreateWorldScreen {
                                         boolean resetToDefault,
                                         Consumer<WorldDataConfiguration> onSuccess,
                                         CallbackInfo ci) {
-        DatapackHook.injectDatapack(repository, getOrCreateTempDataPackDir(), packValidator);
+        DatapackHook.injectDatapack(repository, getTempDataPackDir(), packValidator);
     }
 }

@@ -71,7 +71,6 @@ public record ModBiome(ResourceKey<Biome> key, Supplier<Biome> factory) {
         builder.hasPrecipitation(biome.hasPrecipitation());
         builder.specialEffects(biome.getSpecialEffects());
         builder.generationSettings(biome.getGenerationSettings());
-        builder.putAttributes(biome.getAttributes());
         return builder;
     }
 

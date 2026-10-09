@@ -9,6 +9,7 @@
     "common.MixinWorldDimensions"
   ],
   "client": [
+    "client.MixinClientLevel",
     "client.MixinCreateWorldScreen",
     "client.MixinWorldCreationUiState"
   ],

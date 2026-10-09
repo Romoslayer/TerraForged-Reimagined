@@ -241,7 +241,7 @@ public class Source extends BiomeSource {
                 if (biome == null) continue;
 
                 covered++;
-                String id = biome.unwrapKey().map(key -> key.identifier().toString()).orElse("?");
+                String id = biome.unwrapKey().map(key -> key.location().toString()).orElse("?");
                 counts.merge(id, 1, Integer::sum);
 
                 long d2 = (long) x * x + (long) z * z;

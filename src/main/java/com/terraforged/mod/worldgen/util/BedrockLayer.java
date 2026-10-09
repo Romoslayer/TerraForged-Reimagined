@@ -28,7 +28,7 @@ import com.terraforged.mod.TerraForged;
 import com.terraforged.mod.util.MathUtil;
 import com.terraforged.mod.worldgen.settings.TerraSettings;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -54,7 +54,7 @@ public final class BedrockLayer {
         var bedrock = Blocks.BEDROCK.defaultBlockState();
         var deepslate = Blocks.DEEPSLATE.defaultBlockState();
 
-        int minY = chunk.getMinY();
+        int minY = chunk.getMinBuildHeight();
         int startX = chunk.getPos().getMinBlockX();
         int startZ = chunk.getPos().getMinBlockZ();
         int variance = Math.max(0, settings.variance);
@@ -73,7 +73,7 @@ public final class BedrockLayer {
                         : (int) (MathUtil.rand(MathUtil.hash(seed + 5261, startX + dx, startZ + dz)) * (variance + 1));
                 int top = minY + minDepth + extra;
 
-                for (int y = minY; y < top && y <= chunk.getMaxY(); y++) {
+                for (int y = minY; y < top && y <= (chunk.getMaxBuildHeight() - 1); y++) {
                     var section = chunk.getSection(chunk.getSectionIndex(y));
                     section.setBlockState(dx, y & 15, dz, material, false);
                 }
@@ -84,7 +84,7 @@ public final class BedrockLayer {
     /** The configured block, or bedrock if the id is unknown or air -- a typo must not open the void. */
     private static BlockState resolve(String id) {
         try {
-            var block = BuiltInRegistries.BLOCK.getValue(Identifier.parse(id));
+            var block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(id));
             if (block != null && block != Blocks.AIR) return block.defaultBlockState();
         } catch (Exception ignored) {
             // Falls through to the warning below.

@@ -45,13 +45,15 @@ public class VanillaGen {
     protected final NoiseBasedChunkGenerator vanillaGenerator;
     protected final Holder<NoiseGeneratorSettings> settings;
 
+    protected final int seaLevel;
     protected final int lavaLevel;
     protected final Aquifer.FluidStatus fluidStatus1;
     protected final Aquifer.FluidStatus fluidStatus2;
     protected final Aquifer.FluidPicker globalFluidPicker;
 
     public VanillaGen(BiomeSource biomeSource, VanillaGen other) {
-        this(biomeSource, other.settings, other.fluidStatus2.fluidLevel());
+        // FluidStatus is a package-private class on 1.21.1, so the sea level is kept alongside it.
+        this(biomeSource, other.settings, other.seaLevel);
     }
 
     /**
@@ -67,6 +69,7 @@ public class VanillaGen {
      */
     public VanillaGen(BiomeSource biomeSource, Holder<NoiseGeneratorSettings> settings, int seaLevel) {
         this.settings = settings;
+        this.seaLevel = seaLevel;
         this.lavaLevel = Math.min(-54, seaLevel);
         this.fluidStatus1 = new Aquifer.FluidStatus(-54, Blocks.LAVA.defaultBlockState());
         this.fluidStatus2 = new Aquifer.FluidStatus(seaLevel, settings.value().defaultFluid());

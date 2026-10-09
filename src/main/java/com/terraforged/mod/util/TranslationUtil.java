@@ -24,11 +24,11 @@
 
 package com.terraforged.mod.util;
 
-import net.minecraft.util.Util;
-import net.minecraft.resources.Identifier;
+import net.minecraft.Util;
+import net.minecraft.resources.ResourceLocation;
 
 public class TranslationUtil {
-    public static String key(String type, Identifier location) {
+    public static String key(String type, ResourceLocation location) {
         return Util.makeDescriptionId(type, location);
     }
 }

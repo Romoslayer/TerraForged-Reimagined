@@ -34,15 +34,17 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * World > Dimensions > Include Extra Dimensions.
  *
  * <p>{@code WorldDimensions#bake} merges every dimension any datapack registers into a new world. When a
- * TerraForged world has the setting off, the set of known dimension keys is cut down to the Overworld,
- * Nether and End before that merge, so extra dimensions are never registered. Any other world, and any
+ * TerraForged world has the setting off, the known dimension keys are cut down to the Overworld, Nether
+ * and End before that merge, so extra dimensions are never registered. Any other world, and any
  * TerraForged world with the setting on (the default), is untouched.
+ *
+ * <p>On 1.21.1 those keys are a {@code Stream} (the first local {@code bake} stores), not a {@code Set}.
  */
 @Mixin(WorldDimensions.class)
 public abstract class MixinWorldDimensions {
@@ -50,13 +52,11 @@ public abstract class MixinWorldDimensions {
     public abstract Map<ResourceKey<LevelStem>, LevelStem> dimensions();
 
     @ModifyVariable(method = "bake", at = @At("STORE"), ordinal = 0)
-    private Set<ResourceKey<LevelStem>> onBakeKnownDimensions(Set<ResourceKey<LevelStem>> known) {
+    private Stream<ResourceKey<LevelStem>> onBakeKnownDimensions(Stream<ResourceKey<LevelStem>> known) {
         var overworld = dimensions().get(LevelStem.OVERWORLD);
         if (overworld == null || !(overworld.generator() instanceof Generator generator)) return known;
         if (generator.getSettings().world.dimensions.includeExtraDimensions) return known;
 
-        return Set.copyOf(known.stream()
-                .filter(key -> key.equals(LevelStem.OVERWORLD) || key.equals(LevelStem.NETHER) || key.equals(LevelStem.END))
-                .toList());
+        return known.filter(key -> key.equals(LevelStem.OVERWORLD) || key.equals(LevelStem.NETHER) || key.equals(LevelStem.END));
     }
 }

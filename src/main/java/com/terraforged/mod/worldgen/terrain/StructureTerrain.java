@@ -149,7 +149,7 @@ public class StructureTerrain {
         if (y + 1 >= max) return false;
 
         for (int py = y; py < max; py++) {
-            chunk.setBlockState(pos.set(x, py, z), solid, 0);
+            chunk.setBlockState(pos.set(x, py, z), solid, false);
         }
 
         return true;
@@ -172,7 +172,7 @@ public class StructureTerrain {
         }
 
         for (int py = minY; py <= maxY; py++) {
-            chunk.setBlockState(pos.set(x, py, z), air, 0);
+            chunk.setBlockState(pos.set(x, py, z), air, false);
         }
 
         return true;

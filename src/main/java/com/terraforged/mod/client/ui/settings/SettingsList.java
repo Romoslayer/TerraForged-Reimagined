@@ -26,7 +26,7 @@ package com.terraforged.mod.client.ui.settings;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -41,10 +41,12 @@ import java.util.List;
  * <p>Laid out like 1.16.5's pages: headings flush with the left edge of the controls, controls in a
  * single column taking most of the panel's width, and the scrollbar at the panel's right edge rather
  * than beside the row.
+ *
+ * <p>1.21.1's lists give every row the same height, so a heading takes a full row and sits at its
+ * bottom, next to the control it introduces.
  */
 public class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> {
     private static final int ROW_HEIGHT = 24;
-    private static final int HEADER_HEIGHT = 20;
 
     private final Font font;
 
@@ -56,11 +58,11 @@ public class SettingsList extends ContainerObjectSelectionList<SettingsList.Row>
     }
 
     public void addHeader(Component text) {
-        addEntry(new HeaderRow(text), HEADER_HEIGHT);
+        addEntry(new HeaderRow(text));
     }
 
     public void addControl(AbstractWidget widget) {
-        addEntry(new ControlRow(widget), ROW_HEIGHT);
+        addEntry(new ControlRow(widget));
     }
 
     public void clear() {
@@ -80,16 +82,16 @@ public class SettingsList extends ContainerObjectSelectionList<SettingsList.Row>
     }
 
     @Override
-    protected int scrollBarX() {
+    protected int getScrollbarPosition() {
         return getX() + width - 6;
     }
 
     /** The screen paints the panel, so the list draws no background or separators of its own. */
     @Override
-    protected void extractListBackground(GuiGraphicsExtractor graphics) {}
+    protected void renderListBackground(GuiGraphics graphics) {}
 
     @Override
-    protected void extractListSeparators(GuiGraphicsExtractor graphics) {}
+    protected void renderListSeparators(GuiGraphics graphics) {}
 
     public abstract static class Row extends ContainerObjectSelectionList.Entry<Row> {}
 
@@ -101,8 +103,9 @@ public class SettingsList extends ContainerObjectSelectionList<SettingsList.Row>
         }
 
         @Override
-        public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float a) {
-            graphics.text(font, text, getRowLeft(), getContentY() + getContentHeight() - font.lineHeight - 2, 0xFFFFFFFF, true);
+        public void render(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX,
+                           int mouseY, boolean hovered, float a) {
+            graphics.drawString(font, text, getRowLeft(), top + height - font.lineHeight - 2, 0xFFFFFFFF, true);
         }
 
         @Override
@@ -124,10 +127,11 @@ public class SettingsList extends ContainerObjectSelectionList<SettingsList.Row>
         }
 
         @Override
-        public void extractContent(GuiGraphicsExtractor graphics, int mouseX, int mouseY, boolean hovered, float a) {
+        public void render(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX,
+                           int mouseY, boolean hovered, float a) {
             widget.setWidth(getRowWidth());
-            widget.setPosition(getRowLeft(), getContentY() + 2);
-            widget.extractRenderState(graphics, mouseX, mouseY, a);
+            widget.setPosition(getRowLeft(), top);
+            widget.render(graphics, mouseX, mouseY, a);
         }
 
         @Override

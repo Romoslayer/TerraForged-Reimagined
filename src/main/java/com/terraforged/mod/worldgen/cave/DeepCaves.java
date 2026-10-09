@@ -201,7 +201,7 @@ public final class DeepCaves {
         // Once per chunk, in the deeper pass: it runs after TerraForged's own caves, which write their cave
         // biomes into the same sections.
         if (!nearSurface) space.applyCityBiome(chunk, deepDark);
-        int minY = chunk.getMinY();
+        int minY = chunk.getMinBuildHeight();
         int startX = chunk.getPos().getMinBlockX();
         int startZ = chunk.getPos().getMinBlockZ();
 
@@ -343,7 +343,7 @@ public final class DeepCaves {
                     if (!carvedAbove && !chunk.getFluidState(pos.move(0, 1, 0)).isEmpty()) continue;
                     pos.set(dx, y, dz);
 
-                    chunk.setBlockState(pos, y < LAVA_LEVEL ? lava : air, 0);
+                    chunk.setBlockState(pos, y < LAVA_LEVEL ? lava : air, false);
                     carvedAbove = true;
                     topCarved = Math.max(topCarved, y);
                 }
@@ -381,7 +381,7 @@ public final class DeepCaves {
                                     && !space.isProtected(i, x, surface - c, z);
                         }
                         if (removable) {
-                            for (int c = 0; c < cap; c++) chunk.setBlockState(pos.set(dx, surface - c, dz), air, 0);
+                            for (int c = 0; c < cap; c++) chunk.setBlockState(pos.set(dx, surface - c, dz), air, false);
                         }
                     }
                 }
@@ -400,7 +400,7 @@ public final class DeepCaves {
                                     && !space.isProtected(i, x, y, z);
                         }
                         if (removable) {
-                            for (int y = surface; y > topCarved; y--) chunk.setBlockState(pos.set(dx, y, dz), air, 0);
+                            for (int y = surface; y > topCarved; y--) chunk.setBlockState(pos.set(dx, y, dz), air, false);
                         }
                     }
                 }

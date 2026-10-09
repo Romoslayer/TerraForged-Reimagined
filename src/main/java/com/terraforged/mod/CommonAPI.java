@@ -30,7 +30,7 @@ import com.terraforged.mod.util.ApiHolder;
 import com.terraforged.mod.worldgen.biome.util.matcher.BiomeMatcher;
 import com.terraforged.mod.worldgen.biome.util.matcher.BiomeTagMatcher;
 import net.minecraft.core.Registry;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.biome.Biome;
@@ -50,7 +50,7 @@ public interface CommonAPI {
      * codecs). Fabric registers immediately; NeoForge freezes those registries outside its
      * registration event, so its entrypoint queues the entry and registers it there instead.
      */
-    default <T> void registerBuiltIn(Registry<T> registry, Identifier id, T value) {
+    default <T> void registerBuiltIn(Registry<T> registry, ResourceLocation id, T value) {
         Registry.register(registry, id, value);
     }
 

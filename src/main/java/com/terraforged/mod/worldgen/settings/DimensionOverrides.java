@@ -26,7 +26,7 @@ package com.terraforged.mod.worldgen.settings;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.WorldDimensions;
@@ -56,7 +56,7 @@ public final class DimensionOverrides {
 
         registries.lookupOrThrow(Registries.WORLD_PRESET).listElements()
                 .filter(preset -> preset.value().createWorldDimensions().dimensions().containsKey(dimension))
-                .map(preset -> preset.key().identifier().toString())
+                .map(preset -> preset.key().location().toString())
                 .sorted()
                 .forEach(options::add);
 
@@ -76,7 +76,7 @@ public final class DimensionOverrides {
         if (presetId == null || DEFAULT.equals(presetId)) return false;
 
         try {
-            var key = ResourceKey.create(Registries.WORLD_PRESET, Identifier.parse(presetId));
+            var key = ResourceKey.create(Registries.WORLD_PRESET, ResourceLocation.parse(presetId));
             var stem = registries.lookupOrThrow(Registries.WORLD_PRESET).get(key)
                     .map(preset -> preset.value().createWorldDimensions().dimensions().get(dimension))
                     .orElse(null);
@@ -85,7 +85,7 @@ public final class DimensionOverrides {
             map.put(dimension, stem);
             return true;
         } catch (Exception e) {
-            com.terraforged.mod.TerraForged.LOG.warn("Ignoring unknown world preset '{}' for {}", presetId, dimension.identifier());
+            com.terraforged.mod.TerraForged.LOG.warn("Ignoring unknown world preset '{}' for {}", presetId, dimension.location());
             return false;
         }
     }

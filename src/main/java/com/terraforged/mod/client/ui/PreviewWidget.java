@@ -32,15 +32,14 @@ import com.terraforged.mod.worldgen.settings.SettingsSerializer;
 import com.terraforged.mod.worldgen.settings.TerraSettings;
 import com.terraforged.mod.worldgen.terrain.TerrainLevels;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarratedElementType;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
-import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -76,7 +75,7 @@ public class PreviewWidget extends AbstractWidget {
     private static final Component PENDING = Component.translatable("terraforged.preview.pending");
 
     private final Minecraft minecraft = Minecraft.getInstance();
-    private final Identifier textureId;
+    private final ResourceLocation textureId;
     private final NativeImage image;
     private final DynamicTexture texture;
 
@@ -126,7 +125,7 @@ public class PreviewWidget extends AbstractWidget {
         this.biomeMap = new BiomeMapManager(registries);
 
         this.image = new NativeImage(RESOLUTION, RESOLUTION, false);
-        this.texture = new DynamicTexture(() -> "terraforged-preview", image);
+        this.texture = new DynamicTexture(image);
         this.textureId = TerraForged.location("preview/" + java.util.UUID.randomUUID());
         minecraft.getTextureManager().register(textureId, texture);
     }
@@ -178,7 +177,7 @@ public class PreviewWidget extends AbstractWidget {
 
         for (int y = 0; y < RESOLUTION; y++) {
             for (int x = 0; x < RESOLUTION; x++) {
-                image.setPixel(x, y, result.pixels()[y * RESOLUTION + x]);
+                image.setPixelRGBA(x, y, toAbgr(result.pixels()[y * RESOLUTION + x]));
             }
         }
 
@@ -187,20 +186,25 @@ public class PreviewWidget extends AbstractWidget {
         hoverPixel = -1;
     }
 
+    /** PreviewRenderer works in ARGB; 1.21.1's NativeImage stores ABGR, so red and blue swap. */
+    private static int toAbgr(int argb) {
+        return (argb & 0xFF00FF00) | ((argb >> 16) & 0xFF) | ((argb & 0xFF) << 16);
+    }
+
     @Override
-    protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float a) {
+    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float a) {
         upload();
 
         var result = shown;
         if (result == null || closed) {
             graphics.fill(getX(), getY(), getX() + width, getY() + height, 0xFF202020);
-            graphics.text(minecraft.font, PENDING, getX() + (width - minecraft.font.width(PENDING)) / 2,
+            graphics.drawString(minecraft.font, PENDING, getX() + (width - minecraft.font.width(PENDING)) / 2,
                     getY() + height / 2 - 4, -1);
             return;
         }
 
-        graphics.blit(RenderPipelines.GUI_TEXTURED, textureId, getX(), getY(), 0F, 0F,
-                width, height, RESOLUTION, RESOLUTION, RESOLUTION, RESOLUTION);
+        graphics.blit(textureId, getX(), getY(), width, height, 0F, 0F,
+                RESOLUTION, RESOLUTION, RESOLUTION, RESOLUTION);
 
         extractInfo(graphics, result, mouseX, mouseY);
     }
@@ -209,7 +213,7 @@ public class PreviewWidget extends AbstractWidget {
      * The text in the corner of the map: always the area covered, and the terrain and biome under the
      * cursor while hovering, as 1.16.5 showed it.
      */
-    private void extractInfo(GuiGraphicsExtractor graphics, Result result, int mouseX, int mouseY) {
+    private void extractInfo(GuiGraphics graphics, Result result, int mouseX, int mouseY) {
         int area = result.request().area();
         var lines = new java.util.ArrayList<String>();
         lines.add(label("area") + area + "x" + area);
@@ -237,7 +241,7 @@ public class PreviewWidget extends AbstractWidget {
         int lineHeight = minecraft.font.lineHeight + 1;
         int y = getY() + height - lines.size() * lineHeight - 2;
         for (var line : lines) {
-            graphics.text(minecraft.font, line, getX() + 3, y, 0xFFFFFFFF, true);
+            graphics.drawString(minecraft.font, line, getX() + 3, y, 0xFFFFFFFF, true);
             y += lineHeight;
         }
     }
@@ -248,7 +252,7 @@ public class PreviewWidget extends AbstractWidget {
 
     /** The map is looked at, not clicked: no click sound, no focus. */
     @Override
-    protected boolean isValidClickButton(net.minecraft.client.input.MouseButtonInfo buttonInfo) {
+    protected boolean isValidClickButton(int button) {
         return false;
     }
 

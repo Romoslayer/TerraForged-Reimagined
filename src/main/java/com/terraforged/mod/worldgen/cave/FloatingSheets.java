@@ -102,8 +102,8 @@ public final class FloatingSheets {
         var air = Blocks.AIR.defaultBlockState();
         var pos = new BlockPos.MutableBlockPos();
 
-        int minY = chunk.getMinY();
-        int maxY = chunk.getMaxY();
+        int minY = chunk.getMinBuildHeight();
+        int maxY = (chunk.getMaxBuildHeight() - 1);
         int startX = chunk.getPos().getMinBlockX();
         int startZ = chunk.getPos().getMinBlockZ();
 
@@ -141,7 +141,7 @@ public final class FloatingSheets {
                                 && !hasBedrock(chunk, pos, dx, y, end, dz)) {
 
                             for (int cy = y; cy <= end; cy++) {
-                                chunk.setBlockState(pos.set(dx, cy, dz), air, 0);
+                                chunk.setBlockState(pos.set(dx, cy, dz), air, false);
                             }
                             changed = true;
                         }

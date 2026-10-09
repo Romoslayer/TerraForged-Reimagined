@@ -86,7 +86,7 @@ public final class StrataDecorator {
 
         int startX = chunk.getPos().getMinBlockX();
         int startZ = chunk.getPos().getMinBlockZ();
-        int minY = Math.max(chunk.getMinY(), DEEPSLATE_TOP);
+        int minY = Math.max(chunk.getMinBuildHeight(), DEEPSLATE_TOP);
 
         for (int dz = 0; dz < 16; dz++) {
             for (int dx = 0; dx < 16; dx++) {

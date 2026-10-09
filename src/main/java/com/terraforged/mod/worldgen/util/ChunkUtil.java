@@ -44,7 +44,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.PalettedContainer;
-import net.minecraft.world.level.chunk.Strategy;
 import net.minecraft.world.level.chunk.ProtoChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
 
@@ -103,7 +102,7 @@ public class ChunkUtil {
             }
         }
 
-        for (int i = heightAccessor.getMinSectionY(); i <= heightAccessor.getMaxSectionY(); ++i) {
+        for (int i = heightAccessor.getMinSection(); i <= (heightAccessor.getMaxSection() - 1); ++i) {
             var chunkSection = chunk.getSection(chunk.getSectionIndexFromSectionY(i));
 
             // Only sections lying entirely within the band, so a section is never half one biome
@@ -119,7 +118,7 @@ public class ChunkUtil {
     }
 
     public static void fillChunk(int seaLevel, ChunkAccess chunk, TerrainData terrainData, FillerBlock filler, GeneratorResource resource) {
-        int limit = chunk.getMaxY() + 1;
+        int limit = chunk.getMaxBuildHeight();
         int min = Math.min(limit, getLowestSection(terrainData));
         int max = Math.min(limit, getHighestSection(terrainData));
 
@@ -129,7 +128,7 @@ public class ChunkUtil {
         // section (determined from our heightmap). This is waaay faster than setting blocks
         // individually in the section so helps reduce the impact of low minY values.
         var sectionData = resource.fullSection;
-        for (int sy = chunk.getMinY(); sy < min; sy += 16) {
+        for (int sy = chunk.getMinBuildHeight(); sy < min; sy += 16) {
             int index = chunk.getSectionIndex(sy);
             var section = chunk.getSection(index);
             sectionData.resetReaderIndex();
@@ -220,8 +219,7 @@ public class ChunkUtil {
 
     protected static ByteBuf createFullPalette() {
         var stateRegistry = Block.BLOCK_STATE_REGISTRY;
-        // The registry moved into Strategy, and Strategy is a top-level class now.
-        var container = new PalettedContainer<>(Blocks.STONE.defaultBlockState(), Strategy.createForBlockStates(stateRegistry));
+        var container = new PalettedContainer<>(stateRegistry, Blocks.STONE.defaultBlockState(), PalettedContainer.Strategy.SECTION_STATES);
 
         container.acquire();
         for (int x = 0; x < 16; x++) {

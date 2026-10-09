@@ -117,7 +117,7 @@ public class FeatureDecorator {
 
     private static List<Holder<Biome>> sortedChunkBiomes(ChunkAccess chunk) {
         var out = chunkBiomes(chunk);
-        out.sort(Comparator.comparing(b -> b.unwrapKey().map(k -> k.identifier().toString()).orElse("")));
+        out.sort(Comparator.comparing(b -> b.unwrapKey().map(k -> k.location().toString()).orElse("")));
         return out;
     }
 
@@ -161,7 +161,7 @@ public class FeatureDecorator {
 
     private static BlockPos getOrigin(WorldGenLevel level, ChunkAccess chunk) {
         var chunkPos = chunk.getPos();
-        var sectionPos = SectionPos.of(chunkPos, level.getMinSectionY());
+        var sectionPos = SectionPos.of(chunkPos, level.getMinSection());
         return sectionPos.origin();
     }
 

@@ -36,7 +36,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
 
 import java.util.*;
@@ -284,7 +284,7 @@ public class BiomeMapManager {
                 TerraForged.LOG.debug("Biome pool: {} has {} biome(s): {}", type, count,
                         Arrays.stream(entry.getValues())
                                 .map(holder -> holder.unwrapKey()
-                                        .map(key -> key.identifier().toString())
+                                        .map(key -> key.location().toString())
                                         .orElse("?"))
                                 .sorted()
                                 .collect(Collectors.joining(", ")));
@@ -297,7 +297,7 @@ public class BiomeMapManager {
         var registered = new ObjectOpenHashSet<Holder<Biome>>();
 
         for (var typeHolder : HOLDERS) {
-            // A RegistryLookup resolves by ResourceKey rather than by bare Identifier.
+            // A RegistryLookup resolves by ResourceKey rather than by bare ResourceLocation.
             var biomeType = climateTypes.get(ResourceKey.create(TerraForged.CLIMATES.get(), typeHolder.name))
                     .map(Holder::value).orElse(null);
             if (biomeType == null) {
@@ -374,7 +374,7 @@ public class BiomeMapManager {
         return new Object2FloatLinkedOpenHashMap<>();
     }
 
-    private record BiomeTypeHolder(BiomeType type, Identifier name) {
+    private record BiomeTypeHolder(BiomeType type, ResourceLocation name) {
         public BiomeTypeHolder(BiomeType type) {
             this(type, TerraForged.location(type.name().toLowerCase(Locale.ROOT)));
         }

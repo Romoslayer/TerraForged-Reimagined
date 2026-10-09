@@ -29,7 +29,7 @@ import com.terraforged.mod.lifecycle.ModSetup;
 import com.terraforged.mod.registry.key.RegistryKey;
 import com.terraforged.mod.worldgen.asset.*;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,7 +43,7 @@ public abstract class TerraForged implements CommonAPI {
 	public static final String DATAPACK_VERSION = "v0.2";
 	public static final Logger LOG = LogManager.getLogger(TITLE);
 
-	public static final Identifier WORLD_PRESET = location("normal");
+	public static final ResourceLocation WORLD_PRESET = location("normal");
 
 	public static final RegistryKey<Biome> BIOMES = registry("minecraft:worldgen/biome");
 
@@ -72,10 +72,10 @@ public abstract class TerraForged implements CommonAPI {
 		return path.get();
 	}
 
-	public static Identifier location(String name) {
-		if (name.contains(":")) return Identifier.parse(name);
+	public static ResourceLocation location(String name) {
+		if (name.contains(":")) return ResourceLocation.parse(name);
 
-		return Identifier.fromNamespaceAndPath(MODID, name);
+		return ResourceLocation.fromNamespaceAndPath(MODID, name);
 	}
 
 	public static <T> RegistryKey<T> registry(String name) {
