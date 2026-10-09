@@ -25,15 +25,23 @@
 package com.terraforged.mod.hooks;
 
 import com.terraforged.mod.TerraForged;
+import com.terraforged.mod.client.ui.Presets;
 import com.terraforged.mod.mixin.server.SettingsAccessor;
+import com.terraforged.mod.worldgen.Generator;
+import com.terraforged.mod.worldgen.GeneratorPreset;
 import com.terraforged.mod.worldgen.datapack.DataPackExporter;
+import com.terraforged.mod.worldgen.settings.DimensionOverrides;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.server.dedicated.Settings;
+import net.minecraft.world.level.levelgen.WorldDimensions;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
 /**
@@ -50,6 +58,11 @@ import java.util.zip.ZipFile;
  * <p>The pack is not made available to every world, because it replaces vanilla's overworld dimension
  * type (1024 blocks tall, clouds at 300) and would change vanilla worlds too. Existing worlds are left
  * alone: their datapacks and world type are already recorded in {@code level.dat}.
+ *
+ * <p>It also gives the server a say in the world's settings. In single-player the create-world screen
+ * starts a TerraForged world from the preset named in {@code config/terraforged/default_preset.txt};
+ * a server reads the same file from its own config folder (writing it, with an explanation, if it is
+ * missing) and applies that preset to the world it creates.
  */
 public final class ServerDatapackHook {
     private static final String PRESET_PREFIX = TerraForged.MODID + ":";
@@ -105,6 +118,77 @@ public final class ServerDatapackHook {
         } else {
             TerraForged.LOG.error("Failed to write TerraForged's datapack to {}; level-type {} will not resolve", dir, levelType);
         }
+    }
+
+    /**
+     * Writes {@code config/terraforged/default_preset.txt} with an explanation and "Default", if it does
+     * not exist yet, so a server owner can find the setting. The file is the same one single-player's
+     * "Set As Default" writes.
+     */
+    public static void writePresetConfigIfMissing() {
+        var file = Presets.defaultFile();
+        if (Files.exists(file)) {
+            return;
+        }
+
+        var builtIn = Presets.builtIn().stream().map(Presets.Preset::name).collect(Collectors.joining(", "));
+        var lines = List.of(
+                "# TerraForged: the settings preset new TerraForged worlds start from.",
+                "#",
+                "# On a dedicated server it applies when a world is first created with",
+                "# level-type=terraforged\\:normal in server.properties. Existing worlds keep the settings",
+                "# they were made with, so changing this later does not change them.",
+                "#",
+                "# Write one preset name on the line below. Names are not case-sensitive, and the",
+                "# \"TerraForged - \" prefix can be left out (\"huge biomes\" works).",
+                "# Built-in: " + builtIn + ".",
+                "# Your own presets are the .json files in config/terraforged/presets: save one from the",
+                "# Customize screen in single-player, then copy its file into this server's presets folder.",
+                "#",
+                "# In single-player, \"Set As Default\" on the Presets page writes this file.",
+                Presets.DEFAULT);
+        try {
+            Files.createDirectories(file.getParent());
+            Files.write(file, lines);
+            TerraForged.LOG.info("Wrote {}; it sets the preset new TerraForged worlds use", file);
+        } catch (IOException e) {
+            TerraForged.LOG.warn("Could not write {}", file, e);
+        }
+    }
+
+    /**
+     * Applies the preset named in {@code default_preset.txt} to a new world's dimensions, if the world
+     * is TerraForged's, the way the create-world screen applies it in single-player. Default needs no
+     * change: the world preset already builds the default generator.
+     */
+    public static WorldDimensions applyDefaultPreset(RegistryAccess registries, WorldDimensions dimensions) {
+        if (!(dimensions.overworld() instanceof Generator)) {
+            return dimensions;
+        }
+
+        var configured = Presets.configuredName();
+        if (configured.isEmpty()) {
+            return dimensions;
+        }
+
+        var preset = Presets.find(configured.get());
+        if (preset.isEmpty()) {
+            var known = Presets.all().stream().map(Presets.Preset::name).collect(Collectors.joining(", "));
+            TerraForged.LOG.warn("No TerraForged preset named \"{}\" (from {}); using Default. Presets: {}",
+                    configured.get(), Presets.defaultFile(), known);
+            return dimensions;
+        }
+
+        var p = preset.get();
+        if (p.name().equals(Presets.DEFAULT)) {
+            return dimensions;
+        }
+
+        var settings = p.settings().copy();
+        TerraForged.LOG.info("Creating the world with TerraForged preset \"{}\"", p.name());
+        return DimensionOverrides.apply(registries,
+                dimensions.replaceOverworldGenerator(registries, GeneratorPreset.build(p.levels(), settings, registries)),
+                settings.world.dimensions);
     }
 
     // Read the way DedicatedServerProperties reads it: lower-cased, defaulting to minecraft:normal.

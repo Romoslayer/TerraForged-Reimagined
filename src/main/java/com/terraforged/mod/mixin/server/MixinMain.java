@@ -56,6 +56,7 @@ public class MixinMain {
             PackRepository packRepository,
             CallbackInfoReturnable<WorldLoader.InitConfig> cir
     ) {
+        ServerDatapackHook.writePresetConfigIfMissing();
         if (access.getDataConfiguration() == null) {
             ServerDatapackHook.setWorldDatapackDir(access.getLevelPath(LevelResource.DATAPACK_DIR));
             ServerDatapackHook.installForNewWorld(properties, safeMode);

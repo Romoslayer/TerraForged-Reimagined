@@ -9,6 +9,7 @@
     "common.MixinWorldDimensions"
   ],
   "server": [
+    "server.MixinDedicatedServerProperties",
     "server.MixinMain",
     "server.SettingsAccessor"
   ],
