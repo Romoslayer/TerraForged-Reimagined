@@ -8,6 +8,10 @@
     "common.MixinPackRepository",
     "common.MixinWorldDimensions"
   ],
+  "server": [
+    "server.MixinMain",
+    "server.SettingsAccessor"
+  ],
   "client": [
     "client.MixinClientLevel",
     "client.MixinCreateWorldScreen",

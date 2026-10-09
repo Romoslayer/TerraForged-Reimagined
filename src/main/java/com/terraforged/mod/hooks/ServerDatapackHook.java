@@ -1,0 +1,146 @@
+/*
+ * MIT License
+ *
+ * Copyright (c) 2026 Romoslayer
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package com.terraforged.mod.hooks;
+
+import com.terraforged.mod.TerraForged;
+import com.terraforged.mod.mixin.server.SettingsAccessor;
+import com.terraforged.mod.worldgen.datapack.DataPackExporter;
+import net.minecraft.server.dedicated.Settings;
+import org.jetbrains.annotations.Nullable;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Locale;
+import java.util.zip.ZipFile;
+
+/**
+ * Gives a new dedicated-server world TerraForged's datapack when {@code server.properties} asks for a
+ * TerraForged world type.
+ *
+ * <p>The world type is a world preset in that datapack. On a client the create-world screen copies the
+ * pack into the new world (see {@link DatapackHook}); a dedicated server has no such screen, so
+ * {@code level-type=terraforged:normal} used to fail to parse and the server generated a vanilla world
+ * unless the pack had been copied in by hand. This does the same copy before the server first loads the
+ * world's datapacks. Vanilla then enables it by itself: on a world's first load, every pack found in
+ * {@code world/datapacks} is added automatically.
+ *
+ * <p>The pack is not made available to every world, because it replaces vanilla's overworld dimension
+ * type (1024 blocks tall, clouds at 300) and would change vanilla worlds too. Existing worlds are left
+ * alone: their datapacks and world type are already recorded in {@code level.dat}.
+ */
+public final class ServerDatapackHook {
+    private static final String PRESET_PREFIX = TerraForged.MODID + ":";
+    private static final String PRESET_DIR = "data/" + TerraForged.MODID + "/worldgen/world_preset/";
+
+    private static @Nullable Path worldDatapackDir;
+
+    private ServerDatapackHook() {
+    }
+
+    /** Records the {@code datapacks} directory of the world the server is about to load. */
+    public static void setWorldDatapackDir(Path dir) {
+        worldDatapackDir = dir;
+    }
+
+    /**
+     * Copies TerraForged's datapack into the world being created, if its level-type is one of
+     * TerraForged's presets. Call only for a world that has no level data yet.
+     */
+    public static void installForNewWorld(Settings<?> properties, boolean safeMode) {
+        String levelType = levelType(properties);
+        if (!levelType.startsWith(PRESET_PREFIX)) {
+            return;
+        }
+
+        if (safeMode) {
+            TerraForged.LOG.warn("Safe mode loads only vanilla's datapack, so level-type {} cannot be used", levelType);
+            return;
+        }
+
+        Path dir = worldDatapackDir;
+        if (dir == null) {
+            TerraForged.LOG.error("Could not find the world's datapacks folder; level-type {} will not resolve", levelType);
+            return;
+        }
+
+        if (hasTerraForgedPack(dir)) {
+            TerraForged.LOG.info("The new world already has a TerraForged datapack in {}", dir);
+            return;
+        }
+
+        try {
+            Files.createDirectories(dir);
+        } catch (IOException e) {
+            TerraForged.LOG.error("Could not create {}; level-type {} will not resolve", dir, levelType, e);
+            return;
+        }
+
+        DataPackExporter.createWorldDatapack(dir);
+
+        if (Files.exists(dir.resolve(DataPackExporter.PACK_FILE_NAME))) {
+            TerraForged.LOG.info("Added TerraForged's datapack to the new world for level-type {}", levelType);
+        } else {
+            TerraForged.LOG.error("Failed to write TerraForged's datapack to {}; level-type {} will not resolve", dir, levelType);
+        }
+    }
+
+    // Read the way DedicatedServerProperties reads it: lower-cased, defaulting to minecraft:normal.
+    private static String levelType(Settings<?> properties) {
+        var raw = ((SettingsAccessor) (Object) properties).terraforged$getProperties();
+        return raw.getProperty("level-type", "minecraft:normal").toLowerCase(Locale.ROOT);
+    }
+
+    // True if some pack in the folder already provides TerraForged's presets, e.g. one copied in by hand
+    // the way the README used to describe. Adding a second copy would load the same files twice.
+    private static boolean hasTerraForgedPack(Path dir) {
+        if (!Files.isDirectory(dir)) {
+            return false;
+        }
+
+        try (var entries = Files.list(dir)) {
+            for (Path entry : (Iterable<Path>) entries::iterator) {
+                if (Files.isDirectory(entry) ? Files.isDirectory(entry.resolve(PRESET_DIR)) : zipHasPresets(entry)) {
+                    return true;
+                }
+            }
+        } catch (IOException e) {
+            TerraForged.LOG.warn("Could not list {}", dir, e);
+        }
+        return false;
+    }
+
+    private static boolean zipHasPresets(Path file) {
+        if (!file.getFileName().toString().toLowerCase(Locale.ROOT).endsWith(".zip")) {
+            return false;
+        }
+
+        try (var zip = new ZipFile(file.toFile())) {
+            return zip.stream().anyMatch(entry -> entry.getName().startsWith(PRESET_DIR));
+        } catch (IOException e) {
+            return false;
+        }
+    }
+}

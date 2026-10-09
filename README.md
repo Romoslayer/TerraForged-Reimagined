@@ -42,20 +42,24 @@ a preview map, and built-in and user presets. Settings are saved with the world.
 
 ## Dedicated servers
 
-The world type comes from a datapack the mod ships, and on a client the create-world screen installs
-it. A dedicated server has no such screen, so the datapack has to be in the world before the world is
-first generated. The simplest way is to create the world in single-player and copy its folder to the
-server: it already carries the datapack. To create it on the server instead:
+Install the mod on the server and set the world type in `server.properties` **before the server first
+creates its world**:
 
-1. Start the server once with the mod installed, then stop it. The mod extracts its datapack to
-   `config/terraforged/pack-v0.2`.
-2. Delete the world folder that start created (`world`, unless `level-name` says otherwise).
-3. Copy `config/terraforged/pack-v0.2` to `world/datapacks/terraforged`.
-4. In `server.properties`, set `level-type=terraforged\:normal`.
-5. Start the server.
+```
+level-type=terraforged\:normal
+```
 
-Without the datapack the server logs `Failed to parse level-type terraforged:normal` and generates a
-vanilla world.
+Then start the server. On that first start the mod copies its datapack into the new world
+(`world/datapacks/TerraForged-v0.2.zip`) and the server loads it, the same datapack the create-world screen
+puts into a single-player world. A world created in single-player can also be copied to the server as it
+is.
+
+The level-type is only read when a world is created: an existing world keeps the world type it was made
+with. To switch a server to TerraForged, delete its world folder (`world`, unless `level-name` says
+otherwise) or set a new `level-name`, then start it.
+
+Worlds set up by hand for 0.4.2 and older keep working as they are. If a new world already has the datapack
+copied in by hand, the mod leaves it and does not add a second copy.
 
 ## Compatibility
 
