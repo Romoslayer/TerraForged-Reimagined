@@ -24,12 +24,19 @@
 
 package com.terraforged.mod.mixin.common;
 
+import com.mojang.serialization.Lifecycle;
+import com.terraforged.mod.TerraForged;
 import com.terraforged.mod.worldgen.Generator;
+import net.minecraft.core.MappedRegistry;
+import net.minecraft.core.RegistrationInfo;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.WorldDimensions;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
@@ -48,6 +55,42 @@ import java.util.Set;
 public abstract class MixinWorldDimensions {
     @Shadow
     public abstract Map<ResourceKey<LevelStem>, LevelStem> dimensions();
+
+    /**
+     * Keeps TerraForged's overworld when a datapack defines one too.
+     *
+     * <p>{@code bake} takes each dimension from the datapacks first and from the world only as a
+     * fallback, so a datapack's {@code data/minecraft/dimension/overworld.json} replaces the world's own
+     * overworld -- new and existing worlds alike. Terralith ships one (its own vanilla-noise overworld)
+     * whenever Lithostitched is absent: its datapack zip, every jar on Forge, and its 1.20.1 / older 1.21.1
+     * jars. A world created as TerraForged then generated as Terralith's terrain, with nothing in the log
+     * and {@code terraforged:generator} still saved in the world. For a TerraForged world the datapacks'
+     * overworld is dropped here, so the world keeps its generator; the datapack's biomes still reach it
+     * through the biome registry, and its other dimensions are untouched. Any other world is unaffected.
+     */
+    @ModifyVariable(method = "bake", at = @At("HEAD"), argsOnly = true)
+    private Registry<LevelStem> onBakeKeepOverworld(Registry<LevelStem> datapackDimensions) {
+        var overworld = dimensions().get(LevelStem.OVERWORLD);
+        if (overworld == null || !(overworld.generator() instanceof Generator)) return datapackDimensions;
+        if (!datapackDimensions.registryKeySet().contains(LevelStem.OVERWORLD)) return datapackDimensions;
+
+        if (!loggedKeptOverworld) {
+            loggedKeptOverworld = true;
+            TerraForged.LOG.info("A datapack defines its own overworld dimension; keeping TerraForged's");
+        }
+
+        var withoutOverworld = new MappedRegistry<LevelStem>(Registries.LEVEL_STEM, Lifecycle.stable());
+        for (var entry : datapackDimensions.entrySet()) {
+            var key = entry.getKey();
+            if (key.equals(LevelStem.OVERWORLD)) continue;
+            withoutOverworld.register(key, entry.getValue(),
+                    datapackDimensions.registrationInfo(key).orElse(RegistrationInfo.BUILT_IN));
+        }
+        return withoutOverworld.freeze();
+    }
+
+    @Unique
+    private static boolean loggedKeptOverworld;
 
     @ModifyVariable(method = "bake", at = @At("STORE"), ordinal = 0)
     private Set<ResourceKey<LevelStem>> onBakeKnownDimensions(Set<ResourceKey<LevelStem>> known) {
