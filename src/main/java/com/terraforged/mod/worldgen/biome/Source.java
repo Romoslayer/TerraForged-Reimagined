@@ -48,6 +48,8 @@ import java.util.function.Supplier;
 
 public class Source extends BiomeSource {
     public static final MapCodec<Source> CODEC = new SourceCodec();
+    /** The registry's codec; see {@code Generator#DISPATCH_CODEC} for why it is one shared instance. */
+    public static final com.mojang.serialization.Codec<Source> DISPATCH_CODEC = CODEC.codec();
     public static final Climate.Sampler NOOP_CLIMATE_SAMPLER = Climate.empty();
 
     protected int seed;
@@ -122,8 +124,8 @@ public class Source extends BiomeSource {
     }
 
     @Override
-    protected MapCodec<? extends BiomeSource> codec() {
-        return CODEC;
+    protected com.mojang.serialization.Codec<? extends BiomeSource> codec() {
+        return DISPATCH_CODEC;
     }
 
     /**

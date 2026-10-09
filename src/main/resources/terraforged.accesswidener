@@ -1,6 +1,6 @@
 accessWidener v2 named
 
-# 1.21.1 is obfuscated: Loom remaps this from Mojang ("named") names at build time.
+# 1.20.1 is obfuscated: Loom remaps this from Mojang ("named") names at build time.
 
 # Biome's climate data has no public accessor any more. Biome#getDownfall() and #getPrecipitation()
 # are both gone: precipitation is positional now (getPrecipitationAt), and downfall is not exposed at
@@ -30,6 +30,6 @@ accessible method net/minecraft/world/level/levelgen/structure/placement/Structu
 accessible method net/minecraft/world/level/levelgen/structure/placement/StructurePlacement exclusionZone ()Ljava/util/Optional;
 
 # DeepCaves resolves vanilla's cave density functions by these keys. On 26.x Fabric API's own access
-# widener opens them; Fabric API for 1.21.1 does not.
+# widener opens them; Fabric API for 1.20.1 does not.
 accessible field net/minecraft/world/level/levelgen/NoiseRouterData ENTRANCES Lnet/minecraft/resources/ResourceKey;
 accessible field net/minecraft/world/level/levelgen/NoiseRouterData NOODLE Lnet/minecraft/resources/ResourceKey;

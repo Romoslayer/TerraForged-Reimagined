@@ -1,11 +1,13 @@
 plugins {
     id 'java'
-    id 'net.minecraftforge.gradle' version "${forgegradle_version}"
+    id 'net.neoforged.moddev.legacyforge' version "${moddev_version}"
 }
 
-// The Forge build. Like neoforge/, every class and asset comes from the Fabric project's source tree
-// (the root), minus its Fabric-only entrypoints and metadata; this project adds the Forge entrypoint,
-// its mods.toml, and an access transformer mirroring the root's access widener.
+// The Forge build for 1.20.1. Like the other loaders, every class and asset comes from the Fabric
+// project's source tree (the root), minus its Fabric-only entrypoints and metadata; this project adds the
+// Forge entrypoint, its mods.toml, and an access transformer mirroring the root's access widener. The
+// NeoForge build (../neoforge) compiles these same files against NeoForge 47.1, which is still a Forge
+// fork on 1.20.1 (same packages, same mods.toml).
 
 version = mod_version
 group = maven_group
@@ -13,41 +15,45 @@ base.archivesName = "${archives_name}-${mc_version}-forge"
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(java_version.toInteger())
 
-// "1.21.1-52.1.16" -> "52": the Forge major version, which mods.toml's ranges use.
+// "1.20.1-47.4.26" -> "47": the Forge major version, which mods.toml's ranges use.
 def forgeMajor = forge_version.tokenize('-')[1].tokenize('.')[0]
 
-minecraft {
-    // 1.21.1 is obfuscated; Forge 52 runs on Mojang's names, so no refmap is needed.
-    mappings channel: 'official', version: mc_version
+legacyForge {
+    // In SRG names for members, as Forge 1.20.1 applies them; see the file.
+    accessTransformers = [rootProject.file('forge/src/main/resources/META-INF/accesstransformer.cfg').absolutePath]
 
-    // META-INF/accesstransformer.cfg, looked up in the resources.
-    accessTransformer = true
+    enable {
+        forgeVersion = forge_version
+    }
 
     runs {
-        configureEach {
-            workingDir = layout.projectDirectory.dir('run')
-            // Dev runs load classes from folders, so Mixin cannot read the jar manifest.
-            args '--mixin.config=terraforged.mixins.json'
+        client {
+            client()
+            gameDirectory = file('run')
         }
+        server {
+            server()
+            gameDirectory = file('run')
+            programArguments = ['--nogui']
+        }
+    }
 
-        register('client')
-
-        register('server') {
-            args '--nogui'
+    mods {
+        terraforged {
+            sourceSet sourceSets.main
         }
     }
 }
 
-repositories {
-    minecraft.mavenizer(it)
-    maven fg.forgeMaven
-    maven fg.minecraftLibsMaven
-    mavenCentral()
+// Forge 1.20.1 runs on SRG names, so the mixins need a refmap.
+mixin {
+    add sourceSets.main, 'terraforged.refmap.json'
+    config 'terraforged.mixins.json'
 }
 
 dependencies {
-    implementation minecraft.dependency("net.minecraftforge:forge:${forge_version}")
-    // 26.x bundles jspecify; 1.21.1 does not.
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    // 26.x bundles jspecify; 1.20.1 does not.
     compileOnly "org.jspecify:jspecify:1.0.0"
 }
 
@@ -82,6 +88,10 @@ processResources {
     filesMatching('META-INF/mods.toml') {
         expand props
     }
+    // The refmap the annotation processor writes.
+    filesMatching('terraforged.mixins.json') {
+        filter { it.replace('"compatibilityLevel": "JAVA_17"', '"refmap": "terraforged.refmap.json", "compatibilityLevel": "JAVA_17"') }
+    }
 }
 
 jar {
@@ -98,7 +108,8 @@ tasks.register('deployToInstance') {
     group = 'build'
     description = "Copies the built jar into the mods folder given by terraforged.deploy.forge.${mc_version}."
 
-    def builtJar = tasks.named('jar').flatMap { it.archiveFile }
+    // The reobfuscated jar: the one Forge 1.20.1 can load.
+    def builtJar = tasks.named('reobfJar').flatMap { it.archiveFile }
     def targetDir = providers.gradleProperty("terraforged.deploy.forge.${mc_version}")
 
     onlyIf { targetDir.isPresent() && !targetDir.get().trim().isEmpty() }

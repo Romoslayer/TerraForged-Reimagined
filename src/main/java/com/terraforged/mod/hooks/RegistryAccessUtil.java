@@ -104,13 +104,8 @@ public class RegistryAccessUtil {
      * the lookup in as both owner and getter), so it can be handed back as one.
      */
     private record InfoLookupProvider(RegistryOps.RegistryInfoLookup lookup) implements HolderLookup.Provider {
-        @Override
-        public Stream<ResourceKey<? extends Registry<?>>> listRegistries() {
-            // A RegistryInfoLookup answers lookups but cannot enumerate. Nothing in TerraForged asks
-            // for the registry list -- it only ever resolves registries it names -- so reporting none
-            // is honest rather than lossy.
-            return Stream.empty();
-        }
+        // 1.20.1's Provider has no registry enumeration to implement; a RegistryInfoLookup could not
+        // answer it anyway, and nothing in TerraForged asks for it.
 
         /**
          * Prefers {@code owner()} over {@code getter()}, which is not an arbitrary choice.

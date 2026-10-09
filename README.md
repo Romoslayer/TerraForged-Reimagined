@@ -1,7 +1,7 @@
 # TerraForged Reimagined
 
 An unofficial port of [TerraForged](https://www.curseforge.com/minecraft/mc-mods/terraforged) to
-**Minecraft 1.21.1**, for **Fabric**, **NeoForge** and **Forge**. (The `main` branch is Minecraft 26.2.) It
+**Minecraft 1.20.1**, for **Fabric**, **NeoForge** and **Forge**. (The `main` branch is Minecraft 26.2.) It
 replaces the overworld generator with large-scale, erosion-shaped landscapes: continents, mountain
 ranges, river networks and climate-driven biome placement.
 
@@ -26,13 +26,13 @@ with your seed, the coordinates, and your mod list.
 
 ## Requirements
 
-- Minecraft 1.21.1 and Java 21
+- Minecraft 1.20.1 and Java 17
 - **Fabric:** Fabric Loader 0.16 or newer, and Fabric API
-- **NeoForge:** NeoForge 21.1
-- **Forge:** Forge 52 (Minecraft Forge for 1.21.1)
+- **NeoForge:** NeoForge 47.1 (NeoForge for 1.20.1)
+- **Forge:** Forge 47 (Minecraft Forge for 1.20.1)
 
 All three loaders generate the same world. Other Minecraft versions have their own branches: `main` (26.2),
-`26.3` and `1.20.1`; CurseForge has files for each.
+`26.3` and `1.21.1`; CurseForge has files for each.
 
 ## Usage
 
@@ -73,7 +73,7 @@ This port is based on the source code of TerraForged's last development branch (
 Minecraft 1.19 on Forge). The last TerraForged release on CurseForge is 0.3.1-ALPHA-2, for Minecraft
 1.18.2.
 
-- **Minecraft versions and loaders.** Runs on Minecraft 26.2 (`main`), 26.3, 1.21.1 (this branch) and 1.20.1,
+- **Minecraft versions and loaders.** Runs on Minecraft 26.2 (`main`), 26.3, 1.21.1 and 1.20.1 (this branch),
   with Fabric, NeoForge or Forge. The original supports Forge only, up to Minecraft 1.18.2.
 - **Rebuilt terrain engine.** The 0.3.x code depended on a library whose source and published builds
   no longer exist. It was rebuilt from a surviving older fork and from the code that calls it. As a
@@ -83,8 +83,8 @@ Minecraft 1.19 on Forge). The last TerraForged release on CurseForge is 0.3.1-AL
   dark are placed in a layer below y=0, so ancient cities can generate. A deep cave pass based on
   vanilla's cave noise fills the depth that newer Minecraft versions added. TerraForged's own cave
   layers are kept.
-- **Newer Minecraft content.** Biomes and structures added since Minecraft 1.19, such as cherry groves
-  and trial chambers, are part of generation.
+- **Newer Minecraft content.** Biomes added since Minecraft 1.19, such as cherry groves, are part of
+  generation.
 - **Settings screen.** A settings screen modelled on TerraForged's 1.16.5 version, with pages for each
   group of options, a preview map, and built-in and user presets. The 0.3.x branch's Customize button
   never worked.
@@ -102,8 +102,8 @@ Minecraft 1.19 on Forge). The last TerraForged release on CurseForge is 0.3.1-AL
 
 This builds all three loaders from the same sources: the Fabric jar in `build/libs/`, the NeoForge jar in
 `neoforge/build/libs/` and the Forge jar in `forge/build/libs/`. To have each build copied into a
-Minecraft instance, set `terraforged.deploy.fabric.1.21.1`, `terraforged.deploy.neoforge.1.21.1` or
-`terraforged.deploy.forge.1.21.1` to that instance's `mods` folder in your user-level
+Minecraft instance, set `terraforged.deploy.fabric.1.20.1`, `terraforged.deploy.neoforge.1.20.1` or
+`terraforged.deploy.forge.1.20.1` to that instance's `mods` folder in your user-level
 `~/.gradle/gradle.properties`.
 
 ## Credits

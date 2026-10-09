@@ -42,7 +42,7 @@ public class SurfaceDecorator {
 
         var surface = state.surfaceSystem();
         var surfaceRules = generator.getVanillaGen().getSettings().value().surfaceRule();
-        // 1.21.1 takes the whole biome registry (26.x passes the set of biomes in play instead).
+        // 1.20.1 takes the whole biome registry (26.x passes the set of biomes in play instead).
         var biomes = region.registryAccess().registryOrThrow(net.minecraft.core.registries.Registries.BIOME);
         surface.buildSurface(state, biomeManager, biomes, false, context, chunk, noiseChunk, surfaceRules);
     }

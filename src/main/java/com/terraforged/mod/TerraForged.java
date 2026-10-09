@@ -73,9 +73,9 @@ public abstract class TerraForged implements CommonAPI {
 	}
 
 	public static ResourceLocation location(String name) {
-		if (name.contains(":")) return ResourceLocation.parse(name);
+		if (name.contains(":")) return new ResourceLocation(name);
 
-		return ResourceLocation.fromNamespaceAndPath(MODID, name);
+		return new ResourceLocation(MODID, name);
 	}
 
 	public static <T> RegistryKey<T> registry(String name) {

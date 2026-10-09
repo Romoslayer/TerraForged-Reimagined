@@ -33,7 +33,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
-import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -44,12 +43,13 @@ import java.util.stream.Stream;
  * and End before that merge, so extra dimensions are never registered. Any other world, and any
  * TerraForged world with the setting on (the default), is untouched.
  *
- * <p>On 1.21.1 those keys are a {@code Stream} (the first local {@code bake} stores), not a {@code Set}.
+ * <p>On 1.20.1 those keys are a {@code Stream} (the first local {@code bake} stores), not a {@code Set},
+ * and the dimensions are a {@code Registry} rather than a {@code Map}.
  */
 @Mixin(WorldDimensions.class)
 public abstract class MixinWorldDimensions {
     @Shadow
-    public abstract Map<ResourceKey<LevelStem>, LevelStem> dimensions();
+    public abstract net.minecraft.core.Registry<LevelStem> dimensions();
 
     @ModifyVariable(method = "bake", at = @At("STORE"), ordinal = 0)
     private Stream<ResourceKey<LevelStem>> onBakeKnownDimensions(Stream<ResourceKey<LevelStem>> known) {

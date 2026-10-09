@@ -121,7 +121,7 @@ public final class StructureOverrides {
                 // Constrain To Biomes off: an empty preferred set, so ring positions are used where they
                 // fall instead of being pulled toward a nearby preferred biome.
                 var preferred = entry.constrainToBiomes ? rings.preferredBiomes()
-                        : net.minecraft.core.HolderSet.<net.minecraft.world.level.biome.Biome>empty();
+                        : net.minecraft.core.HolderSet.<net.minecraft.world.level.biome.Biome>direct();
 
                 var replacement = new ConcentricRingsStructurePlacement(rings.locateOffset(),
                         rings.frequencyReductionMethod(), rings.frequency(), entry.salt, rings.exclusionZone(),

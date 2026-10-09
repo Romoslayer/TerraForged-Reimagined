@@ -36,7 +36,6 @@ import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.repository.RepositorySource;
-import net.minecraft.world.level.validation.DirectoryValidator;
 
 import java.lang.invoke.MethodHandle;
 import java.nio.file.Path;
@@ -66,19 +65,19 @@ public class DatapackHook {
      *         a configuration that is already in effect, which would otherwise loop when this is
      *         called from the screen's init.
      */
-    public static boolean ensureDatapack(PackRepository repository, Path dir, DirectoryValidator validator) {
+    public static boolean ensureDatapack(PackRepository repository, Path dir) {
         boolean wasSelected = repository.getSelectedIds().contains(PACK_FILE_ID);
-        injectDatapack(repository, dir, validator);
+        injectDatapack(repository, dir);
         return !wasSelected;
     }
 
-    public static void injectDatapack(PackRepository repository, Path dir, DirectoryValidator validator) {
+    public static void injectDatapack(PackRepository repository, Path dir) {
         if (!repository.isAvailable(PACK_FILE_ID)) {
             // Copy default datapack to world's temp-dir
             DataPackExporter.createWorldDatapack(dir);
 
             // Scan temp-dir and insert pack entry into repository
-            TerraForgedRepositorySource.inject(repository, dir, validator);
+            TerraForgedRepositorySource.inject(repository, dir);
 
             TerraForged.LOG.info("Injected datapack {}", PACK_FILE_ID);
         }
@@ -156,11 +155,11 @@ public class DatapackHook {
 
         protected RepositorySource source = NOOP;
 
-        public void setDir(Path path, DirectoryValidator validator) {
+        public void setDir(Path path) {
             // PackSource.WORLD, because this pack really is served out of the world's own datapack
             // directory -- it is what vanilla uses for that folder. The explicit setSelected call in
             // injectDatapack means the selection does not depend on the source's auto-add behaviour.
-            source = new FolderRepositorySource(path, PackType.SERVER_DATA, PackSource.WORLD, validator);
+            source = new FolderRepositorySource(path, PackType.SERVER_DATA, PackSource.WORLD);
         }
 
         @Override
@@ -168,13 +167,13 @@ public class DatapackHook {
             source.loadPacks(consumer);
         }
 
-        public static void inject(PackRepository repository, Path dir, DirectoryValidator validator) {
+        public static void inject(PackRepository repository, Path dir) {
             try {
                 var set = (Set<?>) PACK_SOURCES.invokeExact(repository);
 
                 for (var object : set) {
                     if (object instanceof TerraForgedRepositorySource source) {
-                        source.setDir(dir, validator);
+                        source.setDir(dir);
                         // Rediscover, so the pack we just wrote is actually available by the time
                         // injectDatapack calls setSelected -- PackRepository#rebuildSelected silently
                         // drops ids it has not discovered, which would leave the pack unselected.

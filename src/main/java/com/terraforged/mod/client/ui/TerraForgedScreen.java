@@ -430,7 +430,10 @@ public class TerraForgedScreen extends Screen {
         var zoomSlider = SettingControls.slider(Component.translatable(KEY + "zoom"),
                 PreviewWidget.MIN_ZOOM, PreviewWidget.MAX_ZOOM, true, () -> zoom,
                 v -> { zoom = (int) v; refreshPreview(); });
-        zoomSlider.setRectangle(w, BUTTON_HEIGHT, x, y);
+        // 1.20.1 widgets have no setRectangle; the slider is already BUTTON_HEIGHT tall.
+        zoomSlider.setX(x);
+        zoomSlider.setY(y);
+        zoomSlider.setWidth(w);
         addRenderableWidget(zoomSlider);
         y += BUTTON_HEIGHT + GAP;
 
@@ -456,7 +459,7 @@ public class TerraForgedScreen extends Screen {
     private void placePreview(int x, int y, int w) {
         if (preview == null) return;
         int size = Math.max(40, Math.min(w, contentBottom - 6 - y));
-        preview.setRectangle(size, size, x + (w - size) / 2, y);
+        preview.setBounds(x + (w - size) / 2, y, size, size);
         addRenderableWidget(preview);
     }
 
@@ -561,8 +564,11 @@ public class TerraForgedScreen extends Screen {
 
     private class PresetList extends ObjectSelectionList<PresetList.Entry> {
         private PresetList() {
-            super(TerraForgedScreen.this.minecraft, leftWidth, contentBottom - contentTop, contentTop, 20);
-            setX(leftX);
+            super(TerraForgedScreen.this.minecraft, leftWidth, TerraForgedScreen.this.height, contentTop, contentBottom, 20);
+            setLeftPos(leftX);
+            // The screen paints the panel, so the list draws no background or edge shading of its own.
+            setRenderBackground(false);
+            setRenderTopAndBottom(false);
 
             String defaultName = Presets.defaultName();
             for (var preset : Presets.all()) {
@@ -579,19 +585,13 @@ public class TerraForgedScreen extends Screen {
 
         @Override
         public int getRowLeft() {
-            return getX() + (int) (width * 0.15F);
+            return x0 + (int) (width * 0.15F);
         }
 
         @Override
         protected int getScrollbarPosition() {
-            return getX() + width - 6;
+            return x0 + width - 6;
         }
-
-        @Override
-        protected void renderListBackground(GuiGraphics graphics) {}
-
-        @Override
-        protected void renderListSeparators(GuiGraphics graphics) {}
 
         @Override
         public void setSelected(@Nullable Entry entry) {
@@ -622,7 +622,7 @@ public class TerraForgedScreen extends Screen {
                 graphics.drawString(font, label, left + 4, top + 5, 0xFFFFFFFF, true);
             }
 
-            /** 1.21.1 reports no double click, so it is timed here, as vanilla's own lists do. */
+            /** 1.20.1 reports no double click, so it is timed here, as vanilla's own lists do. */
             private long lastClick;
 
             @Override
@@ -644,8 +644,8 @@ public class TerraForgedScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float a) {
-        super.renderBackground(graphics, mouseX, mouseY, a);
+    public void renderBackground(GuiGraphics graphics) {
+        super.renderBackground(graphics);
 
         // The two dark panels behind the page and the preview column.
         graphics.fill(leftX, contentTop, leftX + leftWidth, contentBottom, 0xA0000000);
@@ -654,6 +654,8 @@ public class TerraForgedScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float a) {
+        // 1.20.1 screens draw their own background.
+        renderBackground(graphics);
         super.render(graphics, mouseX, mouseY, a);
         graphics.drawString(font, page.title(), leftX + 2, 12, 0xFFFFFFFF, true);
     }

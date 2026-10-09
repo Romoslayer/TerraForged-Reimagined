@@ -33,7 +33,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Boat.class)
 public class MixinBoat {
-    // 1.21.1 has one Boat class (chest boats and rafts extend it), so this covers every boat.
+    // 1.20.1 has one Boat class (chest boats and rafts extend it), so this covers every boat.
     @Inject(method = "isUnderwater", at = @At("RETURN"), cancellable = true)
     private void onIsUnderwater(CallbackInfoReturnable<Boat.Status> cir) {
         if (cir.getReturnValue() != null && BoatHook.floatTheBoat((Boat) (Object) this)) {

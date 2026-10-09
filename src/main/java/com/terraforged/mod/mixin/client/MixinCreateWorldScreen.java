@@ -29,11 +29,9 @@ import com.terraforged.mod.hooks.DatapackHook;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.world.level.WorldDataConfiguration;
-import net.minecraft.world.level.validation.DirectoryValidator;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Desc;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
@@ -48,14 +46,11 @@ import java.util.function.Consumer;
  * it into existence. (26.x renamed it {@code getOrCreateTempDataPackDir}.) {@code tryApplyNewDataPacks}
  * takes a flag and a callback.
  *
- * <p>The screen's own {@link DirectoryValidator} is passed through rather than a permissive one, so
- * the injected pack is subject to exactly the same symlink checks as any pack the player selects.
+ * <p>1.20.1's pack folders take no symlink validator (newer versions pass the screen's own through), so
+ * the injected pack is read like any other pack folder of this version.
  */
 @Mixin(CreateWorldScreen.class)
 public abstract class MixinCreateWorldScreen {
-    @Shadow
-    private DirectoryValidator packValidator;
-
     // Target is private, so this cannot be abstract -- Mixin discards the body.
     @Shadow
     private Path getTempDataPackDir() {
@@ -91,13 +86,15 @@ public abstract class MixinCreateWorldScreen {
      * pop a confirmation dialog over a screen the player just opened; that prompt belongs to the
      * datapack screen's own flow.
      */
-    @Inject(target = @Desc(value = "init"), at = @At("RETURN"))
+    // Named by method, not @Desc: Forge and NeoForge 1.20.1 run on SRG names, and the 0.8.5 annotation
+    // processor only writes refmap entries for method targets.
+    @Inject(method = "init", at = @At("RETURN"))
     private void onInit(CallbackInfo ci) {
         var screen = (CreateWorldScreen) (Object) this;
         var settings = getDataPackSelectionSettings(screen.getUiState().getSettings().dataConfiguration());
 
         if (settings != null
-                && DatapackHook.ensureDatapack(settings.getSecond(), settings.getFirst(), packValidator)) {
+                && DatapackHook.ensureDatapack(settings.getSecond(), settings.getFirst())) {
             tryApplyNewDataPacks(settings.getSecond(), false, config -> {});
             return;
         }
@@ -106,16 +103,13 @@ public abstract class MixinCreateWorldScreen {
     }
 
     @Inject(
-            target = @Desc(
-                    value = "tryApplyNewDataPacks",
-                    args = {PackRepository.class, boolean.class, Consumer.class}
-            ),
+            method = "tryApplyNewDataPacks(Lnet/minecraft/server/packs/repository/PackRepository;ZLjava/util/function/Consumer;)V",
             at = @At("HEAD")
     )
     private void onTryApplyNewDataPacks(PackRepository repository,
                                         boolean resetToDefault,
                                         Consumer<WorldDataConfiguration> onSuccess,
                                         CallbackInfo ci) {
-        DatapackHook.injectDatapack(repository, getTempDataPackDir(), packValidator);
+        DatapackHook.injectDatapack(repository, getTempDataPackDir());
     }
 }

@@ -65,10 +65,19 @@ public final class DimensionOverrides {
 
     public static WorldDimensions apply(HolderLookup.Provider registries, WorldDimensions dimensions,
                                         TerraSettings.Dimensions settings) {
-        var result = new LinkedHashMap<>(dimensions.dimensions());
+        var result = new LinkedHashMap<ResourceKey<LevelStem>, LevelStem>();
+        dimensions.dimensions().entrySet().forEach(entry -> result.put(entry.getKey(), entry.getValue()));
         boolean changed = replace(registries, result, LevelStem.NETHER, settings.nether);
         changed |= replace(registries, result, LevelStem.END, settings.end);
-        return changed ? new WorldDimensions(result) : dimensions;
+        if (!changed) return dimensions;
+
+        // 1.20.1's WorldDimensions holds a frozen registry, not a map: rebuild one in the same order, with
+        // the lifecycle the old one gave each entry, as vanilla's WorldDimensions#withOverworld does.
+        var old = dimensions.dimensions();
+        var registry = new net.minecraft.core.MappedRegistry<>(Registries.LEVEL_STEM, com.mojang.serialization.Lifecycle.experimental());
+        result.forEach((key, stem) -> registry.register(key, stem,
+                old.getOptional(key).filter(s -> s == stem).map(old::lifecycle).orElse(com.mojang.serialization.Lifecycle.stable())));
+        return new WorldDimensions(registry.freeze());
     }
 
     private static boolean replace(HolderLookup.Provider registries, java.util.Map<ResourceKey<LevelStem>, LevelStem> map,
@@ -76,7 +85,7 @@ public final class DimensionOverrides {
         if (presetId == null || DEFAULT.equals(presetId)) return false;
 
         try {
-            var key = ResourceKey.create(Registries.WORLD_PRESET, ResourceLocation.parse(presetId));
+            var key = ResourceKey.create(Registries.WORLD_PRESET, new ResourceLocation(presetId));
             var stem = registries.lookupOrThrow(Registries.WORLD_PRESET).get(key)
                     .map(preset -> preset.value().createWorldDimensions().dimensions().get(dimension))
                     .orElse(null);

@@ -1,11 +1,11 @@
 plugins {
     id 'java'
-    id 'net.neoforged.moddev' version "${moddev_version}"
+    id 'net.neoforged.moddev.legacyforge' version "${moddev_version}"
 }
 
-// The NeoForge build. Every class and asset comes from the Fabric project's source tree (the root),
-// minus its Fabric-only entrypoints and metadata; this project adds the NeoForge entrypoint, its
-// neoforge.mods.toml, and an access transformer mirroring the root's access widener.
+// The NeoForge build for 1.20.1. NeoForge 47.1 is still a Forge fork (same packages, same mods.toml), so
+// this compiles the root's sources plus the Forge project's entrypoint and resources (../forge) against
+// NeoForge instead of Forge.
 
 version = mod_version
 group = maven_group
@@ -13,18 +13,25 @@ base.archivesName = "${archives_name}-${mc_version}-neoforge"
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(java_version.toInteger())
 
-neoForge {
-    version = neoforge_version
+// "1.20.1-47.1.106" -> "47": NeoForge 47.1 reports itself as Forge 47, which mods.toml's ranges use.
+def forgeMajor = neoforge_version.tokenize('-')[1].tokenize('.')[0]
+
+legacyForge {
+    // In SRG names for members, as Forge 1.20.1 applies them; see the file.
+    accessTransformers = [rootProject.file('forge/src/main/resources/META-INF/accesstransformer.cfg').absolutePath]
+
+    enable {
+        neoForgeVersion = neoforge_version
+    }
 
     runs {
-        configureEach {
-            gameDirectory = file('run')
-        }
         client {
             client()
+            gameDirectory = file('run')
         }
         server {
             server()
+            gameDirectory = file('run')
             programArguments = ['--nogui']
         }
     }
@@ -36,25 +43,33 @@ neoForge {
     }
 }
 
+// NeoForge 1.20.1 runs on SRG names, so the mixins need a refmap.
+mixin {
+    add sourceSets.main, 'terraforged.refmap.json'
+    config 'terraforged.mixins.json'
+}
+
 dependencies {
-    // 26.x bundles jspecify; 1.21.1 does not.
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    // 26.x bundles jspecify; 1.20.1 does not.
     compileOnly "org.jspecify:jspecify:1.0.0"
 }
 
-// Forward the console to the dev server, as Loom does, so scripted runs (tools/neoforge_test.sh) can
-// type commands into it -- ModDevGradle leaves the server's stdin unconnected, so "stop" never arrives.
+// Forward the console to the dev server, as Loom does, so scripted runs can type commands into it.
 tasks.matching { it.name == 'runServer' }.configureEach {
     standardInput = System.in
 }
 
 sourceSets.main {
     java.srcDir rootProject.file('src/main/java')
+    java.srcDir rootProject.file('forge/src/main/java')
     java.exclude 'com/terraforged/mod/platform/fabric/**'
     // Excluded from the Fabric build too: upstream's datagen path, not ported (see the root build).
     java.exclude 'com/terraforged/mod/data/gen/**'
     java.exclude 'com/terraforged/mod/util/TagLoader.java'
 
     resources.srcDir rootProject.file('src/main/resources')
+    resources.srcDir rootProject.file('forge/src/main/resources')
     resources.exclude 'fabric.mod.json'
     resources.exclude 'terraforged.accesswidener'
 }
@@ -65,26 +80,36 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 processResources {
-    def props = [version: project.version, mod_name: mod_name, mc_version_range: neoforge_mc_version_range]
+    def props = [version: project.version, mod_name: mod_name, mc_version_range: neoforge_mc_version_range,
+                 forge_major: forgeMajor]
     inputs.properties props
     filteringCharset 'UTF-8'
 
-    filesMatching('META-INF/neoforge.mods.toml') {
+    filesMatching('META-INF/mods.toml') {
         expand props
+    }
+    // The refmap the annotation processor writes.
+    filesMatching('terraforged.mixins.json') {
+        filter { it.replace('"compatibilityLevel": "JAVA_17"', '"refmap": "terraforged.refmap.json", "compatibilityLevel": "JAVA_17"') }
     }
 }
 
 jar {
+    // Forge (and NeoForge 47.1) find the mixin config through the manifest.
+    manifest {
+        attributes 'MixinConfigs': 'terraforged.mixins.json'
+    }
     from(rootProject.files('LICENSE', 'LICENSE-Noise2D', 'LICENSE-FastNoise'))
 }
 
-// Installs the built jar into a NeoForge instance; the NeoForge counterpart of the root project's
-// deployToInstance, keyed terraforged.deploy.neoforge.<mc_version> in ~/.gradle/gradle.properties.
+// Installs the built jar into a NeoForge instance, keyed terraforged.deploy.neoforge.<mc_version> in
+// ~/.gradle/gradle.properties.
 tasks.register('deployToInstance') {
     group = 'build'
     description = "Copies the built jar into the mods folder given by terraforged.deploy.neoforge.${mc_version}."
 
-    def builtJar = tasks.named('jar').flatMap { it.archiveFile }
+    // The reobfuscated jar: the one NeoForge 1.20.1 can load.
+    def builtJar = tasks.named('reobfJar').flatMap { it.archiveFile }
     def targetDir = providers.gradleProperty("terraforged.deploy.neoforge.${mc_version}")
 
     onlyIf { targetDir.isPresent() && !targetDir.get().trim().isEmpty() }

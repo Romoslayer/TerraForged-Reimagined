@@ -84,7 +84,7 @@ public final class BedrockLayer {
     /** The configured block, or bedrock if the id is unknown or air -- a typo must not open the void. */
     private static BlockState resolve(String id) {
         try {
-            var block = BuiltInRegistries.BLOCK.get(ResourceLocation.parse(id));
+            var block = BuiltInRegistries.BLOCK.get(new ResourceLocation(id));
             if (block != null && block != Blocks.AIR) return block.defaultBlockState();
         } catch (Exception ignored) {
             // Falls through to the warning below.

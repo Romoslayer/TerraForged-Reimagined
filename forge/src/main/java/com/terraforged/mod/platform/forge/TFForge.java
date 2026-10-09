@@ -60,9 +60,10 @@ public class TFForge extends TerraForged {
     private static final List<Consumer<DataPackRegistryEvent.NewRegistry>> DATA_REGISTRIES = new ArrayList<>();
     private static final List<Consumer<RegisterEvent>> BUILT_INS = new ArrayList<>();
 
-    public TFForge(FMLJavaModLoadingContext context) {
+    // No constructor argument: NeoForge 47.1 (which also loads this class on 1.20.1) cannot inject one.
+    public TFForge() {
         super(TFForge::getRootPath);
-        var modBus = context.getModEventBus();
+        var modBus = FMLJavaModLoadingContext.get().getModEventBus();
         modBus.addListener(TFForge::onRegister);
         modBus.addListener(TFForge::onNewDataRegistries);
         MinecraftForge.EVENT_BUS.addListener(TFForge::onRegisterCommands);

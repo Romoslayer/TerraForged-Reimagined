@@ -41,8 +41,8 @@ public class CommonSetup extends Stage {
     protected void doInit() {
         TerraForged.LOG.info("Registering world-gen core codecs");
         var api = CommonAPI.get();
-        api.registerBuiltIn(BuiltInRegistries.BIOME_SOURCE, TerraForged.location("climate"), Source.CODEC);
-        api.registerBuiltIn(BuiltInRegistries.CHUNK_GENERATOR, TerraForged.location("generator"), Generator.CODEC);
+        api.registerBuiltIn(BuiltInRegistries.BIOME_SOURCE, TerraForged.location("climate"), Source.DISPATCH_CODEC);
+        api.registerBuiltIn(BuiltInRegistries.CHUNK_GENERATOR, TerraForged.location("generator"), Generator.DISPATCH_CODEC);
 
 //        Registry.register(BuiltInRegistries.CHUNK_GENERATOR, TerraForged.location("profiler"), GeneratorProfiler.CODEC);
 

@@ -51,7 +51,7 @@ public class NoiseChunkUtil {
      *
      * <p>What 26.2 does instead is read a preliminary surface of 0 everywhere: its router has a
      * {@code preliminarySurfaceLevel} density function, which is zero in a non-vanilla generator's empty
-     * router, so every column above about y=-5 is dressed. 1.21.1 has no such function. It scans
+     * router, so every column above about y=-5 is dressed. 1.20.1 has no such function. It scans
      * {@code initialDensityWithoutJaggedness} down from the top for the first density above 0.390625 and,
      * finding none in an empty router, returns {@code Integer.MAX_VALUE} -- so {@code above_preliminary_surface}
      * failed everywhere and hills and mountains were left as bare stone. This noise chunk's router steps

@@ -75,6 +75,13 @@ public class Generator extends ChunkGenerator implements IGenerator {
             WorldGenCodec.CODEC.forGetter(Generator::getRegistries)
     ).apply(instance, instance.stable(GeneratorPreset::build)));
 
+    /**
+     * The codec the chunk-generator registry holds. 1.20.1's registries hold a {@code Codec}, and a world is
+     * saved by looking up the key of the very object {@link #codec()} returns, so registration and
+     * {@code codec()} must share this one instance.
+     */
+    public static final com.mojang.serialization.Codec<Generator> DISPATCH_CODEC = CODEC.codec();
+
     protected final Source biomeSource;
     protected final TerrainLevels levels;
     protected final TerraSettings settings;
@@ -200,8 +207,8 @@ public class Generator extends ChunkGenerator implements IGenerator {
     }
 
     @Override
-    public MapCodec<? extends ChunkGenerator> codec() {
-        return CODEC;
+    public com.mojang.serialization.Codec<? extends ChunkGenerator> codec() {
+        return DISPATCH_CODEC;
     }
 
     @Override
@@ -237,7 +244,7 @@ public class Generator extends ChunkGenerator implements IGenerator {
     }
 
     @Override
-    public CompletableFuture<ChunkAccess> createBiomes(RandomState state, Blender blender, StructureManager structures, ChunkAccess chunk) {
+    public CompletableFuture<ChunkAccess> createBiomes(java.util.concurrent.Executor executor, RandomState state, Blender blender, StructureManager structures, ChunkAccess chunk) {
         terrainCache().hint(seed, chunk.getPos());
         return CompletableFuture.supplyAsync(() -> {
             ChunkUtil.fillNoiseBiomes(chunk, biomeSource, localResource.get());
@@ -246,7 +253,7 @@ public class Generator extends ChunkGenerator implements IGenerator {
     }
 
     @Override
-    public CompletableFuture<ChunkAccess> fillFromNoise(Blender blender, RandomState state, StructureManager structureManager, ChunkAccess chunkAccess) {
+    public CompletableFuture<ChunkAccess> fillFromNoise(java.util.concurrent.Executor executor, Blender blender, RandomState state, StructureManager structureManager, ChunkAccess chunkAccess) {
         return terrainCache().combineAsync(ThreadPool.EXECUTOR, seed, chunkAccess, (chunk, terrainData) -> {
             ChunkUtil.fillChunk(getSeaLevel(), chunk, terrainData, ChunkUtil.FILLER, localResource.get());
             ChunkUtil.primeHeightmaps(getSeaLevel(), chunk, terrainData, ChunkUtil.FILLER);
@@ -280,7 +287,7 @@ public class Generator extends ChunkGenerator implements IGenerator {
     @Override
     public void applyCarvers(WorldGenRegion region, long seed, RandomState state, BiomeManager biomes, StructureManager structures, ChunkAccess chunk,
                              net.minecraft.world.level.levelgen.GenerationStep.Carving stage) {
-        // 1.21.1 calls this once per chunk, with the AIR stage only (ChunkStatusTasks#generateCarvers), so
+        // 1.20.1 calls this once per chunk, with the AIR stage only (ChunkStatus.CARVERS), so
         // TerraForged carves once, as on 26.x where the stage argument is gone.
         biomeGenerator().carve(seed, chunk, region, biomes, this, structures);
 

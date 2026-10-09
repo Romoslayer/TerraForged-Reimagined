@@ -28,7 +28,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.Lifecycle;
 import com.terraforged.mod.registry.key.RegistryKey;
 import net.minecraft.core.MappedRegistry;
-import net.minecraft.core.RegistrationInfo;
 import net.minecraft.resources.ResourceKey;
 import org.jetbrains.annotations.NotNull;
 
@@ -57,7 +56,7 @@ public class DataRegistry<T> implements Iterable<Map.Entry<ResourceKey<T>, T>> {
     }
 
     public void register(ResourceKey<T> key, T value) {
-        registry.register(key, value, RegistrationInfo.BUILT_IN);
+        registry.register(key, value, Lifecycle.stable());
     }
 
     @NotNull

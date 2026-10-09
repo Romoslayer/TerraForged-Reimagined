@@ -58,7 +58,7 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}+${mc_version}"
 
-    // 26.x bundles jspecify; 1.21.1 does not.
+    // 26.x bundles jspecify; 1.20.1 does not.
     compileOnly "org.jspecify:jspecify:1.0.0"
 
     annotationProcessor "io.github.llamalad7:mixinextras-fabric:${mixin_extras_version}"
@@ -95,7 +95,7 @@ idea {
 }
 
 // Installs the freshly built jar into a Minecraft instance's mods folder, so the instance is never
-// running a stale build. Set terraforged.deploy.fabric.<mc_version> (e.g. terraforged.deploy.fabric.1.21.1)
+// running a stale build. Set terraforged.deploy.fabric.<mc_version> (e.g. terraforged.deploy.fabric.1.20.1)
 // in ~/.gradle/gradle.properties; unset or missing = skipped. The key names the loader and Minecraft
 // version so a build can only ever install into an instance it can run in, and the mod so the user-level
 // file, which overrides every project, cannot redirect another project's deploy.

@@ -37,7 +37,8 @@ import java.util.function.UnaryOperator;
 
 public class Codecs {
     public static <A> MapCodec<A> opt(String name, A defaultValue, Codec<A> codec) {
-        return Codec.optionalField(name, codec, false).xmap(o -> o.orElse(defaultValue), a -> Optional.ofNullable(a));
+        // DFU 6 (1.20.1) has no strict/lenient flag; its optional field ignores a value that fails to decode.
+        return codec.optionalFieldOf(name).xmap(o -> o.orElse(defaultValue), a -> Optional.ofNullable(a));
     }
 
     public static <V> JsonElement encode(V v, Codec<V> codec) {

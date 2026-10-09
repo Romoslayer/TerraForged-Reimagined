@@ -139,6 +139,14 @@ public class PreviewWidget extends AbstractWidget {
         startIfIdle();
     }
 
+    /** 1.20.1's widgets have no setRectangle, and only the widget itself can set its height. */
+    public void setBounds(int x, int y, int width, int height) {
+        setX(x);
+        setY(y);
+        this.width = width;
+        this.height = height;
+    }
+
     private void startIfIdle() {
         if (closed || !running.compareAndSet(false, true)) return;
 
@@ -186,7 +194,7 @@ public class PreviewWidget extends AbstractWidget {
         hoverPixel = -1;
     }
 
-    /** PreviewRenderer works in ARGB; 1.21.1's NativeImage stores ABGR, so red and blue swap. */
+    /** PreviewRenderer works in ARGB; 1.20.1's NativeImage stores ABGR, so red and blue swap. */
     private static int toAbgr(int argb) {
         return (argb & 0xFF00FF00) | ((argb >> 16) & 0xFF) | ((argb & 0xFF) << 16);
     }

@@ -48,7 +48,7 @@ public class ClimateType {
                     if (name.equals(IGNORE)) return;
 
                     float weight = ops.getNumberValue(e.getSecond()).result().orElseThrow().floatValue();
-                    weights.put(ResourceLocation.parse(name), weight);
+                    weights.put(new ResourceLocation(name), weight);
                 });
                 return new ClimateType(weights);
             }).map(weights -> Pair.of(weights, input));

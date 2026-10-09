@@ -128,7 +128,7 @@ public final class SettingControls {
             // Free text, as 1.16.5's Bedrock Layer material box was. Written back on every keystroke;
             // anything invalid is dealt with where the value is used.
             var box = new net.minecraft.client.gui.components.EditBox(
-                    net.minecraft.client.Minecraft.getInstance().font, 150, 20, label);
+                    net.minecraft.client.Minecraft.getInstance().font, 0, 0, 150, 20, label);
             box.setMaxLength(256);
             box.setValue(String.valueOf(get(target, field)));
             box.setResponder(value -> {

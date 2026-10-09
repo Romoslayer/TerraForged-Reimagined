@@ -70,6 +70,6 @@ public class TFMain extends TerraForged implements ModInitializer, CommandRegist
     }
 
     private static Path getRootPath() {
-        return FabricLoader.getInstance().getModContainer(MODID).orElseThrow().getRootPaths().getFirst();
+        return FabricLoader.getInstance().getModContainer(MODID).orElseThrow().getRootPaths().get(0);
     }
 }

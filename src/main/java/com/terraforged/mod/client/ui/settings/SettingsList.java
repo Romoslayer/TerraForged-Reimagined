@@ -42,7 +42,7 @@ import java.util.List;
  * single column taking most of the panel's width, and the scrollbar at the panel's right edge rather
  * than beside the row.
  *
- * <p>1.21.1's lists give every row the same height, so a heading takes a full row and sits at its
+ * <p>1.20.1's lists give every row the same height, so a heading takes a full row and sits at its
  * bottom, next to the control it introduces.
  */
 public class SettingsList extends ContainerObjectSelectionList<SettingsList.Row> {
@@ -51,9 +51,12 @@ public class SettingsList extends ContainerObjectSelectionList<SettingsList.Row>
     private final Font font;
 
     public SettingsList(Minecraft minecraft, int x, int y, int width, int height) {
-        super(minecraft, width, height, y, ROW_HEIGHT);
+        super(minecraft, width, minecraft.getWindow().getGuiScaledHeight(), y, y + height, ROW_HEIGHT);
         this.font = minecraft.font;
-        this.setX(x);
+        this.setLeftPos(x);
+        // The screen paints the panel, so the list draws no background or edge shading of its own.
+        this.setRenderBackground(false);
+        this.setRenderTopAndBottom(false);
         this.centerListVertically = false;
     }
 
@@ -78,20 +81,13 @@ public class SettingsList extends ContainerObjectSelectionList<SettingsList.Row>
 
     @Override
     public int getRowLeft() {
-        return getX() + (int) (width * 0.15F);
+        return x0 + (int) (width * 0.15F);
     }
 
     @Override
     protected int getScrollbarPosition() {
-        return getX() + width - 6;
+        return x0 + width - 6;
     }
-
-    /** The screen paints the panel, so the list draws no background or separators of its own. */
-    @Override
-    protected void renderListBackground(GuiGraphics graphics) {}
-
-    @Override
-    protected void renderListSeparators(GuiGraphics graphics) {}
 
     public abstract static class Row extends ContainerObjectSelectionList.Entry<Row> {}
 
@@ -130,7 +126,8 @@ public class SettingsList extends ContainerObjectSelectionList<SettingsList.Row>
         public void render(GuiGraphics graphics, int index, int top, int left, int width, int height, int mouseX,
                            int mouseY, boolean hovered, float a) {
             widget.setWidth(getRowWidth());
-            widget.setPosition(getRowLeft(), top);
+            widget.setX(getRowLeft());
+            widget.setY(top);
             widget.render(graphics, mouseX, mouseY, a);
         }
 

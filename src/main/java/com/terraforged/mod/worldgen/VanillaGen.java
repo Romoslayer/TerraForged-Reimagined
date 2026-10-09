@@ -52,7 +52,7 @@ public class VanillaGen {
     protected final Aquifer.FluidPicker globalFluidPicker;
 
     public VanillaGen(BiomeSource biomeSource, VanillaGen other) {
-        // FluidStatus is a package-private class on 1.21.1, so the sea level is kept alongside it.
+        // FluidStatus is a package-private class on 1.20.1, so the sea level is kept alongside it.
         this(biomeSource, other.settings, other.seaLevel);
     }
 

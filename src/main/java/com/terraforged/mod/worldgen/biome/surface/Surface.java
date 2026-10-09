@@ -43,7 +43,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 public class Surface {
     /**
      * The soils the erosion decorator strips from steep slopes: dirt, grass, podzol, mycelium, moss and mud.
-     * On 1.21.1 that is {@code #minecraft:dirt}, as upstream used; 26.x moved most of it into
+     * On 1.20.1 that is {@code #minecraft:dirt}, as upstream used; 26.x moved most of it into
      * {@code #minecraft:substrate_overworld} and reads that instead, so every version erodes the same soils.
      */
     protected static final TagKey<Block> ERODIBLE = BlockTags.DIRT;
