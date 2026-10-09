@@ -219,22 +219,62 @@ public final class Presets {
         return builtIn().stream().anyMatch(p -> p.name().equalsIgnoreCase(name));
     }
 
-    /** The preset new TerraForged worlds start from. {@link #DEFAULT} unless the player picked another. */
-    public static String defaultName() {
+    /**
+     * Finds a preset by a name a person typed: exact first, then ignoring case, then without the
+     * built-ins' "TerraForged - " prefix, so a server owner can write {@code huge biomes} for
+     * "TerraForged - Huge Biomes".
+     */
+    public static Optional<Preset> find(String name) {
+        String wanted = name.trim();
+        var all = all();
+        return all.stream().filter(p -> p.name().equals(wanted)).findFirst()
+                .or(() -> all.stream().filter(p -> p.name().equalsIgnoreCase(wanted)).findFirst())
+                .or(() -> all.stream().filter(p -> withoutPrefix(p.name()).equalsIgnoreCase(withoutPrefix(wanted))).findFirst());
+    }
+
+    private static String withoutPrefix(String name) {
+        String prefix = "terraforged - ";
+        return name.toLowerCase(Locale.ROOT).startsWith(prefix) ? name.substring(prefix.length()).trim() : name.trim();
+    }
+
+    public static Path defaultFile() {
+        return DataPackExporter.CONFIG_DIR.resolve(DEFAULT_FILE);
+    }
+
+    /**
+     * The name written in {@code default_preset.txt}, if any: its first line that is neither blank nor a
+     * {@code #} comment. The file is also the dedicated server's preset setting, and the server writes it
+     * with comments explaining it.
+     */
+    public static Optional<String> configuredName() {
         try {
-            var file = DataPackExporter.CONFIG_DIR.resolve(DEFAULT_FILE);
-            if (!Files.exists(file)) return DEFAULT;
-            String name = Files.readString(file).trim();
-            return get(name).isPresent() ? name : DEFAULT;
+            var file = defaultFile();
+            if (!Files.exists(file)) return Optional.empty();
+            return Files.readAllLines(file).stream()
+                    .map(String::trim)
+                    .filter(line -> !line.isEmpty() && !line.startsWith("#"))
+                    .findFirst();
         } catch (IOException e) {
-            return DEFAULT;
+            return Optional.empty();
         }
     }
 
+    /** The preset new TerraForged worlds start from. {@link #DEFAULT} unless the player picked another. */
+    public static String defaultName() {
+        return configuredName().flatMap(Presets::find).map(Preset::name).orElse(DEFAULT);
+    }
+
+    /** Writes the default preset's name, keeping any comment lines already in the file. */
     public static void setDefault(String name) {
         try {
-            Files.createDirectories(DataPackExporter.CONFIG_DIR);
-            Files.writeString(DataPackExporter.CONFIG_DIR.resolve(DEFAULT_FILE), name);
+            var file = defaultFile();
+            var lines = new ArrayList<String>();
+            if (Files.exists(file)) {
+                Files.readAllLines(file).stream().filter(line -> line.trim().startsWith("#")).forEach(lines::add);
+            }
+            lines.add(name);
+            Files.createDirectories(file.getParent());
+            Files.write(file, lines);
         } catch (IOException e) {
             TerraForged.LOG.warn("Could not set default preset {}", name, e);
         }

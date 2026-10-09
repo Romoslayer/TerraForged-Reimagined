@@ -71,6 +71,7 @@ public class MixinMain {
             PackRepository packRepository,
             CallbackInfoReturnable<WorldLoader.InitConfig> cir
     ) {
+        ServerDatapackHook.writePresetConfigIfMissing();
         if (levelDataTag == null) {
             ServerDatapackHook.installForNewWorld(properties, safeMode);
         }
