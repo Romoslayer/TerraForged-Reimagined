@@ -31,8 +31,8 @@ with your seed, the coordinates, and your mod list.
 - **NeoForge:** NeoForge for 26.2
 - **Forge:** Forge 65 (Minecraft Forge for 26.2)
 
-All three loaders generate the same world. For Minecraft 26.3, see the `26.3` branch; CurseForge has files
-for both versions.
+All three loaders generate the same world. Other Minecraft versions have their own branches: `26.3`,
+`1.21.1` and `1.20.1`; CurseForge has files for each.
 
 ## Usage
 
@@ -73,7 +73,7 @@ This port is based on the source code of TerraForged's last development branch (
 Minecraft 1.19 on Forge). The last TerraForged release on CurseForge is 0.3.1-ALPHA-2, for Minecraft
 1.18.2.
 
-- **Minecraft versions and loaders.** Runs on Minecraft 26.2 (this branch) and 26.3 (the `26.3` branch),
+- **Minecraft versions and loaders.** Runs on Minecraft 26.2 (this branch), 26.3, 1.21.1 and 1.20.1,
   with Fabric, NeoForge or Forge. The original supports Forge only, up to Minecraft 1.18.2.
 - **Rebuilt terrain engine.** The 0.3.x code depended on a library whose source and published builds
   no longer exist. It was rebuilt from a surviving older fork and from the code that calls it. As a
