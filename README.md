@@ -54,9 +54,27 @@ Then start the server. On that first start the mod copies its datapack into the 
 puts into a single-player world. A world created in single-player can also be copied to the server as it
 is.
 
-The level-type is only read when a world is created: an existing world keeps the world type it was made
-with. To switch a server to TerraForged, delete its world folder (`world`, unless `level-name` says
-otherwise) or set a new `level-name`, then start it.
+### Presets
+
+`terraforged:normal` is TerraForged's only world type; its settings come from a **preset**. A server's new
+world uses the preset named in the server's `config/terraforged/default_preset.txt`, and Default if there is
+none. To use another, create that file with the preset's name on one line before the first start:
+
+```
+Huge Biomes
+```
+
+The built-in presets are Default, Beautiful, Huge Biomes, Lite and Vanilla-ish (their full names start
+with "TerraForged - ", which can be left out; case does not matter). For your own settings, save a preset
+from the Customize screen in single-player and copy its file from your game's `config/terraforged/presets`
+folder to the server's. Every server start writes `default_preset.txt` with these notes if it does not
+exist yet. It is the same file single-player's "Set As Default" writes.
+
+### Existing worlds
+
+The level-type and the preset are only read when a world is created: an existing world keeps the world
+type and settings it was made with. To switch a server to TerraForged or to another preset, delete its
+world folder (`world`, unless `level-name` says otherwise) or set a new `level-name`, then start it.
 
 Worlds set up by hand for 0.4.2 and older keep working as they are. If a new world already has the datapack
 copied in by hand, the mod leaves it and does not add a second copy.
